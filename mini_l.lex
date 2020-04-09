@@ -3,8 +3,12 @@
 %}
     
 DIGIT   [0-9]
+LETTER  [a-zA-Z]
+ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))* 
     
 %%
+
+"##".*          {/* do nothin. flex will not match newline with . */ }
 
 "function"      {printf("FUNCTION\n"); currPos += yyleng;}
 "beginparams"   {printf("BEGIN_PARAMS\n"); currPos += yyleng;}
@@ -48,8 +52,6 @@ DIGIT   [0-9]
 "<"     {printf("LT\n"); currPos += yyleng;}
 ">"     {printf("GT\n"); currPos += yyleng;}
 
-
-
 ";"     {printf("SEMICOLON\n"); currPos += yyleng;}
 ","     {printf("COMMA\n"); currPos += yyleng;}
 "("     {printf("L_PAREN\n"); currPos += yyleng;}
@@ -59,7 +61,8 @@ DIGIT   [0-9]
 ":="    {printf("ASSIGN\n"); currPos += yyleng;}
 ":"     {printf("COLON\n"); currPos += yyleng;}
 
-{DIGIT}+ {printf("NUMBERS %s\n", yytext); currPos += yyleng;}
+{ID}   {printf("IDENT %s\n", yytext); currPos += yyleng;}
+{DIGIT}+            {printf("NUMBER %s\n", yytext); currPos += yyleng;}
     
 "\n"    {currLine++; currPos = 1;}
     
