@@ -4,11 +4,11 @@
     
 DIGIT   [0-9]
 LETTER  [a-zA-Z]
-ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))* 
+ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
     
 %%
 
-"##".*          {/* do nothin. flex will not match newline with . */ }
+"##".*          {/* do nothing. flex will not match newline with . */ }
 
 "function"      {printf("FUNCTION\n"); currPos += yyleng;}
 "beginparams"   {printf("BEGIN_PARAMS\n"); currPos += yyleng;}
@@ -61,8 +61,10 @@ ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
 ":="    {printf("ASSIGN\n"); currPos += yyleng;}
 ":"     {printf("COLON\n"); currPos += yyleng;}
 
-{ID}   {printf("IDENT %s\n", yytext); currPos += yyleng;}
-{DIGIT}+            {printf("NUMBER %s\n", yytext); currPos += yyleng;}
+{ID}                      {printf("IDENT %s\n", yytext); currPos += yyleng;}
+({DIGIT}+|"_"+){ID}"_"+   {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter", currLine, currPos, yytext); exit(0);}
+{ID}"_"                   {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore", currLine, currPos, yytext); exit(0);}
+{DIGIT}+                  {printf("NUMBER %s\n", yytext); currPos += yyleng;}
     
 "\n"    {currLine++; currPos = 1;}
     
