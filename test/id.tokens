@@ -1,0 +1,7 @@
+IDENT i
+IDENT id
+IDENT id2
+IDENT id_2
+IDENT id_3_4__5
+IDENT CAPITALIZED_ID
+Error at line 7, column 1: identifier "invalid_id_" cannot end with an underscore

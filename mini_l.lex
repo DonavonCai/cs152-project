@@ -61,10 +61,11 @@ ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
 ":="    {printf("ASSIGN\n"); currPos += yyleng;}
 ":"     {printf("COLON\n"); currPos += yyleng;}
 
-{ID}                      {printf("IDENT %s\n", yytext); currPos += yyleng;}
-({DIGIT}+|"_"+){ID}"_"+   {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter", currLine, currPos, yytext); exit(0);}
-{ID}"_"                   {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore", currLine, currPos, yytext); exit(0);}
+({DIGIT}+|"_"+){ID}.*   {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);}
+{ID}"_"                   {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0);}
+
 {DIGIT}+                  {printf("NUMBER %s\n", yytext); currPos += yyleng;}
+{ID}                      {printf("IDENT %s\n", yytext); currPos += yyleng;}
     
 "\n"    {currLine++; currPos = 1;}
     

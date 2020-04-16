@@ -1,0 +1,5 @@
+--- out.txt	2020-04-16 13:46:22.607987094 -0700
++++ id_begin_with_num.tokens	2020-04-16 13:45:47.876988399 -0700
+@@ -1 +1 @@
+-Error at line 1, column 1: identifier "1invalid_id_begin_with_" must begin with a letter
++Error at line 1, column 1: identifier "1invalid_id_begin_with_num" must begin with a letter
