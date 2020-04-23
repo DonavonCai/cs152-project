@@ -1,4 +1,4 @@
-output: lexer
+output: lex.yy.c
 	gcc -o lexer lex.yy.c -lfl
-lexer: lex.yy.c
+lex.yy.c:
 	flex mini_l.lex
