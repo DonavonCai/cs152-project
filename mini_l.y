@@ -93,11 +93,13 @@ relation-expr:       optional-not expression comp expression
                      | optional-not LPAREN bool-expr RPAREN
                         {printf("relation-expr -> optional-not LPAREN bool-expr RPAREN\n");}
 ;
+
 optional-not:        /* eps */
                         {printf("optional-not -> epsilon\n");}
                      NOT
                         {printf("optional-not -> NOT\n");}
 ;
+
 comp:                EQ
                        {printf("comp -> EQ\n");} 
                      | NEQ

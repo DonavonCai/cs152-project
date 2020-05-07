@@ -2,7 +2,7 @@ Rules useless in parser due to conflicts
 
    28 more-relation-and-exprs: %empty
 
-   69 more-vars: %empty
+   68 more-vars: %empty
 
 
 State 46 conflicts: 1 shift/reduce
@@ -124,17 +124,16 @@ Grammar
    65 more-expressions: %empty
    66                 | COMMA expression more-expressions
 
-   67 vars: var
-   68     | var more-vars COMMA var
+   67 vars: var more-vars COMMA var
 
-   69 more-vars: %empty
-   70          | COMMA var more-vars
+   68 more-vars: %empty
+   69          | COMMA var more-vars
 
-   71 var: IDENT
-   72    | IDENT brack-expr
-   73    | IDENT brack-expr brack-expr
+   70 var: IDENT
+   71    | IDENT brack-expr
+   72    | IDENT brack-expr brack-expr
 
-   74 brack-expr: LBRACKET expression RBRACKET
+   73 brack-expr: LBRACKET expression RBRACKET
 
 
 Terminals, with rules where they appear
@@ -143,7 +142,7 @@ $end (0) 0
 error (256)
 FUNCTION (258) 4
 SEMICOLON (259) 4 6 14 21
-IDENT (260) 4 11 13 62 71 72 73
+IDENT (260) 4 11 13 62 70 71 72
 NUMBER (261) 10 21 60
 BEGINPARAMS (262) 4
 ENDPARAMS (263) 4
@@ -151,12 +150,12 @@ BEGINLOCALS (264) 4
 ENDLOCALS (265) 4
 BEGINBODY (266) 4
 ENDBODY (267) 4
-COMMA (268) 13 66 68 70
+COMMA (268) 13 66 67 69
 COLON (269) 7 11
 INT (270) 7 8 9
 ARRAY (271) 8 9
-LBRACKET (272) 10 74
-RBRACKET (273) 10 74
+LBRACKET (272) 10 73
+RBRACKET (273) 10 73
 OF (274) 8 9
 ASSIGN (275) 16 21
 IF (276) 17 18
@@ -233,7 +232,7 @@ $@1 (69)
 comp (70)
     on left: 40 41 42 43 44 45, on right: 34
 expression (71)
-    on left: 46, on right: 16 21 25 34 61 64 66 74
+    on left: 46, on right: 16 21 25 34 61 64 66 73
 more-multiplicative-exprs (72)
     on left: 47 48 49, on right: 46 48 49
 multiplicative-expr (73)
@@ -253,13 +252,13 @@ expressions (79)
 more-expressions (80)
     on left: 65 66, on right: 64 66
 vars (81)
-    on left: 67 68, on right: 22 23
+    on left: 67, on right: 22 23
 more-vars (82)
-    on left: 69 70, on right: 68 70
+    on left: 68 69, on right: 67 69
 var (83)
-    on left: 71 72 73, on right: 16 21 59 67 68 70
+    on left: 70 71 72, on right: 16 21 59 67 69
 brack-expr (84)
-    on left: 74, on right: 72 73
+    on left: 73, on right: 71 72
 
 
 State 0
@@ -589,13 +588,13 @@ State 37
 
 State 38
 
-   71 var: IDENT .
-   72    | IDENT . brack-expr
-   73    | IDENT . brack-expr brack-expr
+   70 var: IDENT .
+   71    | IDENT . brack-expr
+   72    | IDENT . brack-expr brack-expr
 
     LBRACKET  shift, and go to state 50
 
-    $default  reduce using rule 71 (var)
+    $default  reduce using rule 70 (var)
 
     brack-expr  go to state 51
 
@@ -724,7 +723,7 @@ State 49
 
 State 50
 
-   74 brack-expr: LBRACKET . expression RBRACKET
+   73 brack-expr: LBRACKET . expression RBRACKET
 
     IDENT  shift, and go to state 63
     MINUS  shift, and go to state 64
@@ -741,12 +740,12 @@ State 50
 
 State 51
 
-   72 var: IDENT brack-expr .
-   73    | IDENT brack-expr . brack-expr
+   71 var: IDENT brack-expr .
+   72    | IDENT brack-expr . brack-expr
 
     LBRACKET  shift, and go to state 50
 
-    $default  reduce using rule 72 (var)
+    $default  reduce using rule 71 (var)
 
     brack-expr  go to state 75
 
@@ -858,13 +857,11 @@ State 60
 
 State 61
 
-   67 vars: var .
-   68     | var . more-vars COMMA var
+   67 vars: var . more-vars COMMA var
 
     COMMA  shift, and go to state 89
 
-    COMMA     [reduce using rule 69 (more-vars)]
-    $default  reduce using rule 67 (vars)
+    COMMA  [reduce using rule 68 (more-vars)]
 
     more-vars  go to state 90
 
@@ -981,16 +978,16 @@ State 73
 
 State 74
 
-   74 brack-expr: LBRACKET expression . RBRACKET
+   73 brack-expr: LBRACKET expression . RBRACKET
 
     RBRACKET  shift, and go to state 104
 
 
 State 75
 
-   73 var: IDENT brack-expr brack-expr .
+   72 var: IDENT brack-expr brack-expr .
 
-    $default  reduce using rule 73 (var)
+    $default  reduce using rule 72 (var)
 
 
 State 76
@@ -1133,7 +1130,7 @@ State 88
 
 State 89
 
-   70 more-vars: COMMA . var more-vars
+   69 more-vars: COMMA . var more-vars
 
     IDENT  shift, and go to state 38
 
@@ -1142,7 +1139,7 @@ State 89
 
 State 90
 
-   68 vars: var more-vars . COMMA var
+   67 vars: var more-vars . COMMA var
 
     COMMA  shift, and go to state 122
 
@@ -1304,9 +1301,9 @@ State 103
 
 State 104
 
-   74 brack-expr: LBRACKET expression RBRACKET .
+   73 brack-expr: LBRACKET expression RBRACKET .
 
-    $default  reduce using rule 74 (brack-expr)
+    $default  reduce using rule 73 (brack-expr)
 
 
 State 105
@@ -1452,18 +1449,18 @@ State 120
 
 State 121
 
-   70 more-vars: COMMA var . more-vars
+   69 more-vars: COMMA var . more-vars
 
     COMMA  shift, and go to state 89
 
-    COMMA  [reduce using rule 69 (more-vars)]
+    COMMA  [reduce using rule 68 (more-vars)]
 
     more-vars  go to state 142
 
 
 State 122
 
-   68 vars: var more-vars COMMA . var
+   67 vars: var more-vars COMMA . var
 
     IDENT  shift, and go to state 38
 
@@ -1665,16 +1662,16 @@ State 141
 
 State 142
 
-   70 more-vars: COMMA var more-vars .
+   69 more-vars: COMMA var more-vars .
 
-    $default  reduce using rule 70 (more-vars)
+    $default  reduce using rule 69 (more-vars)
 
 
 State 143
 
-   68 vars: var more-vars COMMA var .
+   67 vars: var more-vars COMMA var .
 
-    $default  reduce using rule 68 (vars)
+    $default  reduce using rule 67 (vars)
 
 
 State 144
