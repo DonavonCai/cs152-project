@@ -10,7 +10,7 @@ ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
 
 "##".*          {/* do nothing. flex will not match newline with . */ }
 
-"function"      {currPos += yyleng;}
+"function"      {currPos += yyleng; return FUNCTION;}
 "beginparams"   {currPos += yyleng;}
 "endparams"     {currPos += yyleng;}
 "beginlocals"   {currPos += yyleng;}
