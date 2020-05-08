@@ -1,6 +1,9 @@
 %{
 #include <stdio.h>
 extern FILE *yyin;
+void yyerror(const char* msg);
+int yylex();
+extern int currLine;
 %}
 
 %token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INT ARRAY OF IF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE READ WRITE AND OR NOT TRUE FALSE RETURN MINUS PLUS MULT DIV MOD EQ NEQ LE GE LT GT SEMICOLON COMMA LPAREN RPAREN LBRACKET RBRACKET ASSIGN COLON NUMBER IDENT
@@ -75,20 +78,24 @@ relation_and_expr:  relation_expr
                  |  relation_expr AND relation_and_expr
                         {printf("relation_and_expr -> relation_expr AND relation-and-expr\n");}
                  ;
-relation_expr:       optional_not expression comp expression
+relation_expr:       expression comp expression
                         {printf("relation_expr -> optional_not expression comp expression\n");}
-             |       optional_not TRUE
-                        {printf("relation_expr -> optional_not TRUE\n");}
-             |       optional_not FALSE
-                        {printf("relation_expr -> optional_not FALSE\n");}
-             |       optional_not LPAREN bool_expr RPAREN
-                        {printf("relation_expr -> optional_not LPAREN bool_expr RPAREN\n");}
+             |       NOT expression comp expression
+                        {printf("relation_expr -> NOT expression comp expression\n");}
+             |       TRUE
+                        {printf("relation_expr -> TRUE\n");}
+             |       NOT TRUE
+                        {printf("relation_expr -> NOT TRUE\n");}            
+             |       FALSE
+                        {printf("relation_expr -> FALSE\n");}
+             |       NOT FALSE
+                        {printf("relation_expr -> NOT FALSE\n");}
+             |       LPAREN bool_expr RPAREN
+                        {printf("relation_expr -> LPAREN bool_expr RPAREN\n");}
+             |       NOT LPAREN bool_expr RPAREN
+                        {printf("relation_expr -> NOT LPAREN bool_expr RPAREN\n");}
              ;
-optional_not:        /* eps */
-                        {printf("optional_not -> epsilon\n");}
-            |        NOT
-                        {printf("optional_not -> NOT\n");}
-            ;
+
 comp:                EQ
                        {printf("comp -> EQ\n");} 
     |                NEQ
