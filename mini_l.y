@@ -4,7 +4,10 @@ extern FILE *yyin;
 void yyerror(const char* msg);
 int yylex();
 extern int currLine;
+extern int currPos;
 %}
+
+%error-verbose
 
 %token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INT ARRAY OF IF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE READ WRITE AND OR NOT TRUE FALSE RETURN MINUS PLUS MULT DIV MOD EQ NEQ LE GE LT GT SEMICOLON COMMA LPAREN RPAREN LBRACKET RBRACKET ASSIGN COLON NUMBER IDENT
 
@@ -191,5 +194,5 @@ int main(int argc, char** argv) {
 }
 
 void yyerror(const char* msg) {
-    printf("Error in line %d: %s\n", currLine, msg);
+    printf("Error in line %d: %s, column %d\n", currLine, currPos, msg);
 }

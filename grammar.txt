@@ -1,0 +1,45 @@
+program -> functions 
+
+functions -> eps | function functions
+
+function -> FUNCTION IDENT SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
+
+declarations -> eps | declaration SEMICOLON declarations
+
+declaration ->  ids COLON INT | ids COLON ARRAY arr OF INT | ids COLON ARRAY arr arr OF INT
+
+arr  -> LBRACKET NUMBER RBRACKET
+
+ids -> IDENT | IDENT COMMA ids
+
+statements -> statement SEMICOLON | statement SEMICOLON statements
+
+statement ->  var ASSIGN expression | IF bool_expr THEN statements ENDIF | IF bool_expr THEN statements ELSE statements ENDIF | WHILE bool_expr BEGINLOOP statements ENDLOOP | DO BEGINLOOP statements ENDLOOP WHILE bool_expr | FOR var ASSIGN NUMBER SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP | READ vars | WRITE vars | CONTINUE | RETURN expression
+
+bool_expr ->  relation_and_expr | relation_and_expr OR bool_expr
+
+relation_and_expr ->  relation_expr | relation_expr AND relation_and_expr
+
+relation_expr -> expression comp expression | NOT expression comp expression | TRUE | NOT TRUE | FALSE | NOT FALSE | LPAREN bool_expr RPAREN | NOT LPAREN bool_expr RPAREN
+
+comp -> EQ | NEQ | LT | GT | LE | GE
+
+expression -> multiplicative_expr | multiplicative_expr PLUS expression | multiplicative_expr MINUS expression
+
+multiplicative_expr -> term | term MULT multiplicative_expr | term DIV multiplicative_expr | term MOD multiplicative_expr
+
+term ->  num_term | id_term
+
+num_term ->  var | MINUS var | NUMBER | MINUS NUMBER | LPAREN expression RPAREN | MINUS LPAREN expression RPAREN
+
+id_term ->      IDENT LPAREN expressions RPAREN
+
+expressions -> eps | nonempty_expressions
+
+nonempty_expressions -> expression | expression COMMA nonempty_expressions
+
+vars -> var | var COMMA vars
+
+var -> IDENT | IDENT brack_expr | IDENT brack_expr brack_expr
+
+brack_expr -> LBRACKET expression RBRACKET
