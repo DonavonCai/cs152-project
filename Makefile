@@ -1,6 +1,6 @@
 output: lex.yy.c y.tab.c
-	gcc -o parser y.tab.c lex.yy.c -lfl
+	gcc -o parser y.tab.c lex.yy.c -lfl -DYYDEBUG=1
 lex.yy.c:
-	flex mini_l.lex
+	flex -d mini_l.lex
 y.tab.c:
-	bison -v -d --file-prefix=y mini_l.y
+	bison -v -d -t --file-prefix=y mini_l.y

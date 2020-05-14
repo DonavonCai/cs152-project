@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#define YYDEBUG 1
 extern FILE *yyin;
 void yyerror(const char* msg);
 int yylex();
@@ -37,7 +38,10 @@ declaration:  ids COLON INT
                 {printf("declaration -> ids ARRAY arr OF INT\n");}
               | ids COLON ARRAY arr arr OF INT
                 {printf("declaration -> ids ARRAY arr arr OF INT\n");}
-;
+              | ids error INT
+                {printf("missing semicolon in declaration\n"); yyerrok;}
+              
+              ;
 arr :       LBRACKET NUMBER RBRACKET
                 {printf("arr -> LBRACKET NUMBER RBRACKET\n");}
     ;
@@ -178,6 +182,7 @@ brack_expr: LBRACKET expression RBRACKET
 %%
 
 int main(int argc, char** argv) {
+    yydebug = 1;
     if (argc >= 2) {
         yyin = fopen(argv[1], "r");    
         if (yyin == NULL) {

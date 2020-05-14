@@ -2,10 +2,9 @@ function main;
 beginparams
 endparams
 beginlocals
-endlocals
 a integer;
 endlocals
 beginbody
 a := 1 + 2 * 3;
 endbody
-## should find error on line 6: no : between a and integer
+## should find error on line 5: no : between a and integer
