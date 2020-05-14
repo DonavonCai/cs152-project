@@ -3,4 +3,4 @@ output: lex.yy.c y.tab.c
 lex.yy.c:
 	flex mini_l.lex
 y.tab.c:
-	bison -v -d -t --file-prefix=y mini_l.y
+	bison -v -d --file-prefix=y mini_l.y

@@ -37,9 +37,6 @@ declaration:  ids COLON INT
                 {printf("declaration -> ids ARRAY arr OF INT\n");}
               | ids COLON ARRAY arr arr OF INT
                 {printf("declaration -> ids ARRAY arr arr OF INT\n");}
-              | ids error INT
-                {printf("missing semicolon in declaration\n"); yyerrok;}
-              
               ;
 arr :       LBRACKET NUMBER RBRACKET
                 {printf("arr -> LBRACKET NUMBER RBRACKET\n");}
