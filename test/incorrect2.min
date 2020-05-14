@@ -7,4 +7,4 @@ endlocals
 beginbody
 a := 1 + 2 * 3;
 endbody
-## should find error on line 5: no : between a and integer
+## when bison finds the error on line 5, it causes segmentation fault

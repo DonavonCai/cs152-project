@@ -1,6 +1,5 @@
 %{
 #include <stdio.h>
-#define YYDEBUG 1
 extern FILE *yyin;
 void yyerror(const char* msg);
 int yylex();
@@ -182,7 +181,6 @@ brack_expr: LBRACKET expression RBRACKET
 %%
 
 int main(int argc, char** argv) {
-    yydebug = 1;
     if (argc >= 2) {
         yyin = fopen(argv[1], "r");    
         if (yyin == NULL) {
