@@ -1,7 +1,10 @@
 declarations -> epsilon
-Error in line 5: column 10: syntax error, unexpected INT, expecting COMMA or COLON
+ids -> IDENT COLON
+ids -> IDENT COMMA ids
+ids -> IDENT COMMA ids
+declaration -> ids COLON INT
 declarations -> epsilon
-DECLARATION: error SEMICOLON declarations
+declarations -> declaration SEMICOLON declarations
 var -> IDENT
 num_term -> NUMBER
 term -> optional_neg num_term

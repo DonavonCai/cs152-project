@@ -1,24 +1,13 @@
+ident -> IDENT main
 declarations -> epsilon
-ids -> IDENT
-Error in line 5: column 10: syntax error, unexpected INT, expecting COLON
-ERROR CAUGHT!!!!!!
+ident -> IDENT a
+ident -> IDENT b
+ident -> IDENT c
+ids -> ident COLON
+ids -> ident COMMA ids
+ids -> ident COMMA ids
+declaration -> ids COLON INT
 declarations -> epsilon
 declarations -> declaration SEMICOLON declarations
-var -> IDENT
-num_term -> NUMBER
-term -> optional_neg num_term
-multiplicative_expr -> term
-num_term -> NUMBER
-term -> optional_neg num_term
-num_term -> NUMBER
-term -> optional_neg num_term
-multiplicative_expr -> term
-multiplicative_expr -> term MULT multiplicative_expr
-expression -> multiplicative_expr
-expression -> multiplicative_expr PLUS expression
-statement -> var ASSIGN expression
-statements -> statement SEMICOLON
-functions -> FUNCTION IDENT SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
-functions -> epsilon
-functions -> function functions
-program -> functions
+ident -> IDENT a
+Error at line 8, column 3: unrecognized symbol "="

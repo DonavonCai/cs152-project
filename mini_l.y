@@ -7,9 +7,17 @@ extern int currLine;
 extern int currPos;
 %}
 
+%union {
+    char* text;
+}
+
 %error-verbose
 
-%token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INT ARRAY OF IF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE READ WRITE AND OR NOT TRUE FALSE RETURN MINUS PLUS MULT DIV MOD EQ NEQ LE GE LT GT SEMICOLON COMMA LPAREN RPAREN LBRACKET RBRACKET ASSIGN COLON NUMBER IDENT
+%token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY 
+%token INT ARRAY OF IF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE 
+%token READ WRITE AND OR NOT TRUE FALSE RETURN MINUS PLUS MULT DIV MOD EQ NEQ LE GE LT GT 
+%token SEMICOLON COMMA LPAREN RPAREN LBRACKET RBRACKET 
+%token ASSIGN COLON NUMBER <text>IDENT
 
 %start program
 
@@ -22,34 +30,44 @@ functions:    /*epsilon*/
                 {printf("functions -> epsilon\n");}
          |    function functions
                 {printf("functions -> function functions\n");}
+         |    error functions
+                {printf("functions -> error functions\n"); yyerrok;}
          ;
-function:     FUNCTION IDENT SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
-                {printf("functions -> FUNCTION IDENT SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY\n");}
+function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
+                {printf("functions -> FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY\n");}
         ;
 declarations: /* eps */
                 {printf("declarations -> epsilon\n");}
             | declaration SEMICOLON declarations
                 {printf("declarations -> declaration SEMICOLON declarations\n");}
+            | declaration error declarations
+                {printf("declaration -> declaration error declarations\n"); yyerrok;}
+            | error SEMICOLON declarations
+                {printf("declaration -> error SEMICOLON declarations\n");yyerrok;}
             ;
-declaration:  ids COLON INT
+declaration:  ids INT
                 {printf("declaration -> ids COLON INT\n");}
-              | ids COLON ARRAY arr OF INT
+              | ids ARRAY arr OF INT
                 {printf("declaration -> ids ARRAY arr OF INT\n");}
-              | ids COLON ARRAY arr arr OF INT
+              | ids ARRAY arr arr OF INT
                 {printf("declaration -> ids ARRAY arr arr OF INT\n");}
               ;
 arr :       LBRACKET NUMBER RBRACKET
                 {printf("arr -> LBRACKET NUMBER RBRACKET\n");}
     ;
-ids:        IDENT
-                {printf("ids -> IDENT\n");}
-   |        IDENT COMMA ids
-                {printf("ids -> IDENT COMMA ids\n");}
+ids:        ident COLON
+                {printf("ids -> ident COLON\n");}
+   |        ident COMMA ids
+                {printf("ids -> ident COMMA ids\n");}
    ;
 statements: statement SEMICOLON
                 {printf("statements -> statement SEMICOLON\n");}
           |  statement SEMICOLON statements
                 {printf("statements -> statement SEMICOLON statements\n");}
+          |  error SEMICOLON statements
+                {printf("statements -> error SEMICOLON statements\n"); yyerrok;}
+          |  error SEMICOLON
+                {printf("statements -> error SEMICOLON\n"); yyerrok;}
           ;
 statement:  var ASSIGN expression
                 {printf("statement -> var ASSIGN expression\n");}
@@ -74,7 +92,7 @@ statement:  var ASSIGN expression
         ;
 bool_expr:  relation_and_expr
          |  relation_and_expr OR bool_expr
-                {printf("bool_expr -> relation_and_expr OR bool_expr\n");}
+                { printf("bool_expr -> relation_and_expr OR bool_expr\n");}
          ;
 relation_and_expr:  relation_expr
                         {printf("relation_and_expr -> relation_expr\n");}
@@ -112,6 +130,13 @@ comp:                EQ
     |                GE
                        {printf("comp -> GE\n");}
     ;
+
+expressions:         /* eps */
+                        {printf("expressions -> epsilon\n");}
+           |         nonempty_expressions
+                        {printf("expressions -> nonempty_expressions\n");}
+           ;
+
 expression:          multiplicative_expr
                         {printf("expression -> multiplicative_expr\n");}
           |          multiplicative_expr PLUS expression
@@ -146,14 +171,10 @@ num_term:     var
         |     MINUS LPAREN expression RPAREN
                 {printf("num->term MINUS LPAREN expression RPAREN\n");}
         ;
-id_term:      IDENT LPAREN expressions RPAREN
-                {printf("id_term -> IDENT LPAREN expressions RPAREN\n");}
+id_term:      ident LPAREN expressions RPAREN
+                {printf("id_term -> ident LPAREN expressions RPAREN\n");}
        ;
-expressions:         /* eps */
-                        {printf("expressions -> epsilon\n");}
-           |         nonempty_expressions
-                        {printf("expressions -> nonempty_expressions\n");}
-           ;
+
 nonempty_expressions: expression
                         {printf("nonempty-expressions -> expression\n");}
                     | expression COMMA nonempty_expressions
@@ -164,16 +185,20 @@ vars:       var
     |       var COMMA vars
                 {printf("vars -> var COMMA vars\n");}
     ;
-var:       IDENT
-                {printf("var -> IDENT\n");}
-   |       IDENT brack_expr
-                {printf("var -> IDENT brack_expr\n");}
-   |       IDENT brack_expr brack_expr
-                {printf("var -> IDENT brack_expr brack_expr\n");}
+var:       ident
+                {printf("var -> ident\n");}
+   |       ident brack_expr
+                {printf("var -> ident brack_expr\n");}
+   |       ident brack_expr brack_expr
+                {printf("var -> ident brack_expr brack_expr\n");}
    ;
 brack_expr: LBRACKET expression RBRACKET
                 {printf("brack_expr -> LBRACKET expression RBRACKET\n");}
           ;
+
+ident: IDENT
+        {printf("ident -> IDENT %s\n", $1);}
+     ;
 
 %%
 
@@ -194,5 +219,5 @@ int main(int argc, char** argv) {
 }
 
 void yyerror(const char* msg) {
-    printf("Error in line %d: %s, column %d\n", currLine, currPos, msg);
+    printf("Error in line %d: column %d: %s\n", currLine, currPos, msg);
 }

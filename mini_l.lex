@@ -63,9 +63,9 @@ ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
 ":"     {currPos += yyleng; return COLON;}
 
 {DIGIT}+                  {currPos += yyleng; return NUMBER;}
-{ID}                      {currPos += yyleng; return IDENT;}
+{ID}                      {currPos += yyleng; yylval.text = strdup(yytext); return IDENT;}
 
-({DIGIT}+|"_"+){ID}   {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);}
+({DIGIT}+|"_"+){ID}        {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);}
 {ID}"_"+                   {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0);}
    
 "\n"    {currLine++; currPos = 1;}
