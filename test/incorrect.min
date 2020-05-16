@@ -2,9 +2,9 @@ function main;
 beginparams
 endparams
 beginlocals
-a, b, c : integer;
+a : integer;
 endlocals
 beginbody
-a = 1 + 2 * 3;
+a := 1 + 2 * 3
 endbody
 ## parser should find error on line 8, should be := instead of =

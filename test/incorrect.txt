@@ -1,11 +1,16 @@
+ident -> IDENT main
 declarations -> epsilon
-ids -> IDENT COLON
-ids -> IDENT COMMA ids
-ids -> IDENT COMMA ids
+ident -> IDENT a
+ident -> IDENT b
+ident -> IDENT c
+ids -> ident COLON
+ids -> ident COMMA ids
+ids -> ident COMMA ids
 declaration -> ids COLON INT
 declarations -> epsilon
 declarations -> declaration SEMICOLON declarations
-var -> IDENT
+ident -> IDENT a
+var -> ident
 num_term -> NUMBER
 term -> optional_neg num_term
 multiplicative_expr -> term
@@ -19,7 +24,7 @@ expression -> multiplicative_expr
 expression -> multiplicative_expr PLUS expression
 statement -> var ASSIGN expression
 statements -> statement SEMICOLON
-functions -> FUNCTION IDENT SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
+functions -> FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
 functions -> epsilon
 functions -> function functions
 program -> functions

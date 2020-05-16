@@ -65,14 +65,14 @@ ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
 {DIGIT}+                  {currPos += yyleng; return NUMBER;}
 {ID}                      {currPos += yyleng; yylval.text = strdup(yytext); return IDENT;}
 
-({DIGIT}+|"_"+){ID}        {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);}
-{ID}"_"+                   {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); exit(0);}
+({DIGIT}+|"_"+){ID}        {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext);}
+{ID}"_"+                   {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext);}
    
 "\n"    {currLine++; currPos = 1;}
     
 [ \t]   {currPos += yyleng;}
     
-.       {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
+.       {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext);}
     
 %%
 
