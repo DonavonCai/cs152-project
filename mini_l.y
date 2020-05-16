@@ -43,9 +43,9 @@ declarations: /* eps */
             | declaration error declarations
                 {printf("declarations -> declaration error declarations\n"); yyerrok;}
             | error SEMICOLON declarations
-                {printf("declarations -> error SEMICOLON declarations\n");yyerrok;}
-            | error
-                {printf("declarations -> error\n"); yyerrok;}
+                {printf("declarations -> error SEMICOLON\n"); yyerrok;}
+            | error '\n' declarations 
+                {printf("declarations -> error newline declarations\n"); yyerrok;}
             ;
 declaration:  ids INT
                 {printf("declaration -> ids COLON INT\n");}
@@ -66,12 +66,18 @@ statements: statement SEMICOLON
                 {printf("statements -> statement SEMICOLON\n");}
           |  statement SEMICOLON statements
                 {printf("statements -> statement SEMICOLON statements\n");}
+          |  statement error statements
+                {printf("statements -> statement error statements\n"); yyerrok;}
+          |  statement error
+                {printf("statements -> statement error\n"); yyerrok;}
           |  error SEMICOLON statements
                 {printf("statements -> error SEMICOLON statements\n"); yyerrok;}
           |  error SEMICOLON
                 {printf("statements -> error SEMICOLON\n"); yyerrok;}
-          |  error
-                {printf("statements -> error\n"); yyerrok;}
+          |  error '\n' statements
+                {printf("statements -> error newline statements\n"); yyerrok;}
+          |  error '\n'
+                {printf("statements -> error newline\n"); yyerrok;}
           ;
 statement:  var ASSIGN expression
                 {printf("statement -> var ASSIGN expression\n");}

@@ -1,11 +1,7 @@
 ident -> IDENT main
 declarations -> epsilon
 ident -> IDENT a
-ident -> IDENT b
-ident -> IDENT c
 ids -> ident COLON
-ids -> ident COMMA ids
-ids -> ident COMMA ids
 declaration -> ids COLON INT
 declarations -> epsilon
 declarations -> declaration SEMICOLON declarations
