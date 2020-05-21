@@ -1,5 +1,110 @@
-ident -> IDENT main
-Error in line 3: column 12: syntax error, unexpected BEGINLOCALS, expecting ENDPARAMS or IDENT
+ident -> IDENT fibonacci
+ident -> IDENT k
+ids -> ident COLON
+declaration -> ids COLON INT
 declarations -> epsilon
-declarations -> error SEMICOLON
-Error in line 5: column 10: syntax error, unexpected ENDLOCALS, expecting ENDPARAMS
+declarations -> declaration SEMICOLON declarations
+declarations -> epsilon
+ident -> IDENT k
+var -> ident
+num_term -> var
+term -> optional_neg num_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+comp -> LE
+num_term -> NUMBER
+term -> optional_neg num_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+relation_expr -> optional_not expression comp expression
+relation_and_expr -> relation_expr
+relation_expr -> LPAREN bool_expr RPAREN
+relation_and_expr -> relation_expr
+num_term -> NUMBER
+term -> optional_neg num_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+statement -> RETURN expression
+statements -> statement SEMICOLON
+statement -> IF bool-expr THEN statements endif
+ident -> IDENT fibonacci
+ident -> IDENT k
+var -> ident
+num_term -> var
+term -> optional_neg num_term
+multiplicative_expr -> term
+num_term -> NUMBER
+term -> optional_neg num_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+expression -> multiplicative_expr MINUS expression
+nonempty-expressions -> expression
+expressions -> nonempty_expressions
+id_term -> ident LPAREN expressions RPAREN
+term -> id_term
+multiplicative_expr -> term
+ident -> IDENT fibonacci
+ident -> IDENT k
+var -> ident
+num_term -> var
+term -> optional_neg num_term
+multiplicative_expr -> term
+num_term -> NUMBER
+term -> optional_neg num_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+expression -> multiplicative_expr MINUS expression
+nonempty-expressions -> expression
+expressions -> nonempty_expressions
+id_term -> ident LPAREN expressions RPAREN
+term -> id_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+expression -> multiplicative_expr PLUS expression
+statement -> RETURN expression
+statements -> statement SEMICOLON
+statements -> statement SEMICOLON statements
+functions -> FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
+ident -> IDENT main
+declarations -> epsilon
+ident -> IDENT n
+ids -> ident COLON
+declaration -> ids COLON INT
+ident -> IDENT fib_n
+ids -> ident COLON
+declaration -> ids COLON INT
+declarations -> epsilon
+declarations -> declaration SEMICOLON declarations
+declarations -> declaration SEMICOLON declarations
+ident -> IDENT n
+var -> ident
+vars -> var
+statement -> READ vars
+ident -> IDENT fib_n
+var -> ident
+ident -> IDENT fibonacci
+ident -> IDENT n
+var -> ident
+num_term -> var
+term -> optional_neg num_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+nonempty-expressions -> expression
+expressions -> nonempty_expressions
+id_term -> ident LPAREN expressions RPAREN
+term -> id_term
+multiplicative_expr -> term
+expression -> multiplicative_expr
+statement -> var ASSIGN expression
+ident -> IDENT fib_n
+var -> ident
+vars -> var
+statement -> WRITE vars
+statements -> statement SEMICOLON
+statements -> statement SEMICOLON statements
+statements -> statement SEMICOLON statements
+functions -> FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
+functions -> epsilon
+functions -> function functions
+functions -> function functions
+program -> functions

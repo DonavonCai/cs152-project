@@ -1,6 +1,6 @@
 #!/bin/bash
 
-testfile="incorrect.min"
+testfile="fibonacci.min"
 outputfile="out.txt"
 
 printf 'Running test: %s\n' "$testfile"
