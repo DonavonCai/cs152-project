@@ -26,7 +26,7 @@ extern int currPos;
 %left LT LE GT GE EQ NEQ
 %left PLUS MINUS
 %left MULT DIV MOD
-
+%right UMINUS
 %left LBRACKET RBRACKET
 %left LPAREN RPAREN
 
@@ -182,16 +182,16 @@ term:       num_term
     ;
 num_term:     var
                 {printf("num_term -> var\n");}
-        |     MINUS var
-                {printf("num_term -> MINUS var\n");}
+        |     MINUS var %prec UMINUS
+                {printf("num_term -> UMINUS var\n");}
         |     NUMBER
                 {printf("num_term -> NUMBER\n");}
-        |     MINUS NUMBER
-                {printf("num_term -> MINUS NUMBER\n");}
+        |     MINUS NUMBER %prec UMINUS
+                {printf("num_term -> UMINUS NUMBER\n");}
         |     LPAREN expression RPAREN
                 {printf("num_term -> LPAREN expression RPAREN\n");}
-        |     MINUS LPAREN expression RPAREN
-                {printf("num->term MINUS LPAREN expression RPAREN\n");}
+        |     MINUS LPAREN expression RPAREN %prec UMINUS
+                {printf("num->term UMINUS LPAREN expression RPAREN\n");}
         ;
 id_term:      ident LPAREN expressions RPAREN
                 {printf("id_term -> ident LPAREN expressions RPAREN\n");}

@@ -5,6 +5,6 @@ beginlocals
 a : integer;
 endlocals
 beginbody
-a := 1 + 2 * 3;
+a := -1;
 endbody
 ## parser should find error on line 8, should be := instead of =
