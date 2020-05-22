@@ -1,23 +1,41 @@
 %{
 #include <stdio.h>
+#include <memory.h>
+#include <cstdlib>
+#include<vector>
 extern FILE *yyin;
 void yyerror(const char* msg);
 int yylex();
 extern int currLine;
 extern int currPos;
+
+bool no_error = true;
+
+struct dec_type {
+    char* code;
+    std::vector<char*> idList;
+};
+
+/*
+struct idents {
+    char* code;
+    list<char*> l;
+}
+*/
 %}
 
-%union {
-    char* text;
-}
-
 %error-verbose
+
+%union yylval{
+    char *s;
+    struct dec_type *dec;
+}
 
 %token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY 
 %token INT IF ARRAY OF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE 
 %token READ WRITE TRUE FALSE RETURN
 %token SEMICOLON COMMA
-%token COLON NUMBER <text>IDENT
+%token COLON NUMBER <s>IDENT
 
 %right ASSIGN
 %left OR
@@ -30,197 +48,245 @@ extern int currPos;
 %left LBRACKET RBRACKET
 %left LPAREN RPAREN
 
+%start start_program
 
-%start program
+%type<s> program functions function ident declaration statements statement 
+%type<s> arr number ids
+%type<dec> declarations
 
 %%
 
+start_program: program
+                 {if(no_error) printf("%s\n", $1);}
+             ;
+
 program:      functions 
-                {printf("program -> functions\n");}
-       ;
+                {$$ = (char*)malloc(1 + strlen($1));
+                 $$ = $1;
+                }
+         ;
 functions:    /*epsilon*/
-                {printf("functions -> epsilon\n");}
+                {$$ = strdup("");
+                }
          |    function functions
-                {printf("functions -> function functions\n");}
+                {$$ = (char*)malloc(1 + strlen($1) + strlen($2));
+                 strcpy($$, $1);
+                 strncat($$, $2, strlen($2));
+                }
          |    error functions
-                {printf("functions -> error functions\n"); yyerrok;}
+                {no_error = false; yyerrok;}
          ;
 function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
-                {printf("functions -> FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY\n");}
+                {$$ = (char*)malloc(1 + 5 + strlen($2) + 1 /* + strlen($5->code) + strlen($8->code) + strlen($11) */);
+                 strcpy($$, "func ");
+                 strncat($$, $2, strlen($2));
+                 strncat($$, "\n", 1);
+                 //strncat($$, $5->code, strlen($5->code));
+                 //strncat($$, $8->code, strlen($8->code));
+                 //strncat($$, $11, strlen($11));
+                }
         ;
 declarations: /* eps */
-                {printf("declarations -> epsilon\n");}
+                {// $$->code = strdup(""); // FIXME: segfault???
+                }
             | declaration SEMICOLON declarations
-                {printf("declarations -> declaration SEMICOLON declarations\n");}
+                {//$$->code = (char*)malloc(1 + strlen($1) /*+ 1 + strlen($3->code) + 1*/);
+                 //strcpy($$->code, $1);
+                 //strncat($$->code, "\n", 1);
+                 //strncat($$->code, $3->code, strlen($3->code));
+                 //strncat($$->code, "\n", 1);
+                 //$$->code = "blah1";
+                }
             | declaration error declarations
-                {printf("declarations -> declaration error declarations\n"); yyerrok;}
+                {no_error = false; yyerrok;}
             | error SEMICOLON declarations
-                {printf("declarations -> error SEMICOLON\n"); yyerrok;}
+                {no_error = false; yyerrok;}
             | error '\n' declarations 
-                {printf("declarations -> error newline declarations\n"); yyerrok;}
+                {no_error = false; yyerrok;}
             ;
 declaration:  ids INT
-                {printf("declaration -> ids COLON INT\n");}
+                {//$$ = (char*)malloc(3 + strlen($1) + 1);
+                 //strcpy($$, ". ");
+                 //strcat($$, $1);
+                 //$$ = "blah";
+                }
               | ids ARRAY arr OF INT
-                {printf("declaration -> ids ARRAY arr OF INT\n");}
+                {//$$ = (char*)malloc(4 + strlen($1) + 2 + strlen($3));
+                 //strcpy($$, "[] ");
+                 //strcat($$, $1);
+                 //strcat($$, ", ");
+                 //strcat($$, $3);
+                }
               | ids ARRAY arr arr OF INT
-                {printf("declaration -> ids ARRAY arr arr OF INT\n");}
+                {//$$ = (char*)malloc(11);
+                 //strcpy($$, "dec 2d arr");
+                }
               ;
-arr :       LBRACKET NUMBER RBRACKET
-                {printf("arr -> LBRACKET NUMBER RBRACKET\n");}
+arr :       LBRACKET number RBRACKET
+                {//$$ = "";
+                }
     ;
 ids:        ident COLON
-                {printf("ids -> ident COLON\n");}
+                {$$ = strdup($1);}
    |        ident COMMA ids
-                {printf("ids -> ident COMMA ids\n");}
+                {//$$ = (char*)malloc(1 + strlen($1));
+                 //strcpy($$, $1);
+                }
    ;
 statements: statement SEMICOLON
-                {printf("statements -> statement SEMICOLON\n");}
+                {$$ = (char*)malloc(12);
+                 $$ = strdup("statements\n");
+                }
           |  statement SEMICOLON statements
-                {printf("statements -> statement SEMICOLON statements\n");}
+                {$$ = (char*)malloc(22);
+                 $$ = strdup("statement statements\n");}
           |  statement error statements
-                {printf("statements -> statement error statements\n"); yyerrok;}
+                {no_error = false; yyerrok;}
           |  statement error
-                {printf("statements -> statement error\n"); yyerrok;}
+                {no_error = false; yyerrok;}
           |  error SEMICOLON statements
-                {printf("statements -> error SEMICOLON statements\n"); yyerrok;}
+                {no_error = false; yyerrok;}
           |  error SEMICOLON
-                {printf("statements -> error SEMICOLON\n"); yyerrok;}
+                {no_error = false; yyerrok;}
           |  error '\n' statements
-                {printf("statements -> error newline statements\n"); yyerrok;}
+                {no_error = false; yyerrok;}
           |  error '\n'
-                {printf("statements -> error newline\n"); yyerrok;}
+                {no_error = false; yyerrok;}
           ;
 statement:  var ASSIGN expression
-                {printf("statement -> var ASSIGN expression\n");}
+                {}
         |   IF bool_expr THEN statements ENDIF
-                {printf("statement -> IF bool-expr THEN statements endif\n");}
+                {}
         |   IF bool_expr THEN statements ELSE statements ENDIF
-                {printf("statement -> IF bool-expr THEN statements ELSE statements endif\n");}
+                {}
         |   WHILE bool_expr BEGINLOOP statements ENDLOOP
-                {printf("statement -> WHILE bool_expr BEGINLOOP statements ENDLOOP\n");}
+                {}
         |   DO BEGINLOOP statements ENDLOOP WHILE bool_expr
-                {printf("statement -> DO BEGINLOOP statements ENDLOOP WHILE bool_expr\n");}
-        |   FOR var ASSIGN NUMBER SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP
-                {printf("statement -> FOR var ASSIGN NUMBER SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP\n");}
+                {}
+        |   FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP
+                {}
         |   READ vars
-                {printf("statement -> READ vars\n");}
+                {}
         |   WRITE vars
-                {printf("statement -> WRITE vars\n");}
+                {}
         |   CONTINUE
-                {printf("statement -> CONTINUE\n");}
+                {}
         |   RETURN expression
-                {printf("statement -> RETURN expression\n");}
+                {}
         ;
 bool_expr:  relation_and_expr
          |  relation_and_expr OR bool_expr
-                { printf("bool_expr -> relation_and_expr OR bool_expr\n");}
+                { }
          ;
 relation_and_expr:  relation_expr
-                        {printf("relation_and_expr -> relation_expr\n");}
+                        {}
                  |  relation_expr AND relation_and_expr
-                        {printf("relation_and_expr -> relation_expr AND relation-and-expr\n");}
+                        {}
                  ;
 relation_expr:       expression comp expression
-                        {printf("relation_expr -> optional_not expression comp expression\n");}
+                        {}
              |       NOT expression comp expression
-                        {printf("relation_expr -> NOT expression comp expression\n");}
+                        {}
              |       TRUE
-                        {printf("relation_expr -> TRUE\n");}
+                        {}
              |       NOT TRUE
-                        {printf("relation_expr -> NOT TRUE\n");}            
+                        {}            
              |       FALSE
-                        {printf("relation_expr -> FALSE\n");}
+                        {}
              |       NOT FALSE
-                        {printf("relation_expr -> NOT FALSE\n");}
+                        {}
              |       LPAREN bool_expr RPAREN
-                        {printf("relation_expr -> LPAREN bool_expr RPAREN\n");}
+                        {}
              |       NOT LPAREN bool_expr RPAREN
-                        {printf("relation_expr -> NOT LPAREN bool_expr RPAREN\n");}
+                        {}
              ;
 
 comp:                EQ
-                       {printf("comp -> EQ\n");} 
+                       {} 
     |                NEQ
-                       {printf("comp -> NEQ\n");} 
+                       {} 
     |                LT
-                       {printf("comp -> LT\n");} 
+                       {} 
     |                GT
-                       {printf("comp -> GT\n");} 
+                       {} 
     |                LE
-                       {printf("comp -> LE\n");} 
+                       {} 
     |                GE
-                       {printf("comp -> GE\n");}
+                       {}
     ;
 
 expressions:         /* eps */
-                        {printf("expressions -> epsilon\n");}
+                        {}
            |         nonempty_expressions
-                        {printf("expressions -> nonempty_expressions\n");}
+                        {}
            ;
 
 expression:          multiplicative_expr
-                        {printf("expression -> multiplicative_expr\n");}
+                        {}
           |          multiplicative_expr PLUS expression
-                       {printf("expression -> multiplicative_expr PLUS expression\n");}
+                       {}
           |          multiplicative_expr MINUS expression
-                        {printf("expression -> multiplicative_expr MINUS expression\n");}
+                        {}
           ;
 multiplicative_expr:       term
-                                {printf("multiplicative_expr -> term\n");}
+                                {}
                    |       term MULT multiplicative_expr
-                                {printf("multiplicative_expr -> term MULT multiplicative_expr\n");}
+                                {}
                    |       term DIV multiplicative_expr
-                                {printf("multiplicative_expr -> term DIV multiplicative_expr\n");}
+                                {}
                    |       term MOD multiplicative_expr
-                                {printf("multiplicative_expr -> term MOD multiplicative_expr\n");}
+                                {}
                    ;
 term:       num_term
-                {printf("term -> optional_neg num_term\n");}
+                {}
     |       id_term
-                {printf("term -> id_term\n");}
+                {}
     ;
 num_term:     var
-                {printf("num_term -> var\n");}
+                {}
         |     MINUS var %prec UMINUS
-                {printf("num_term -> UMINUS var\n");}
-        |     NUMBER
-                {printf("num_term -> NUMBER\n");}
-        |     MINUS NUMBER %prec UMINUS
-                {printf("num_term -> UMINUS NUMBER\n");}
+                {}
+        |     number
+                {}
+        |     MINUS number %prec UMINUS
+                {}
         |     LPAREN expression RPAREN
-                {printf("num_term -> LPAREN expression RPAREN\n");}
+                {}
         |     MINUS LPAREN expression RPAREN %prec UMINUS
-                {printf("num->term UMINUS LPAREN expression RPAREN\n");}
+                {}
         ;
 id_term:      ident LPAREN expressions RPAREN
-                {printf("id_term -> ident LPAREN expressions RPAREN\n");}
+                {}
        ;
 
 nonempty_expressions: expression
-                        {printf("nonempty-expressions -> expression\n");}
+                        {}
                     | expression COMMA nonempty_expressions
-                        {printf("more_expressions -> COMMA expression more_expressions\n");}
+                        {}
                     ;
 vars:       var
-                {printf("vars -> var\n");}
+                {}
     |       var COMMA vars
-                {printf("vars -> var COMMA vars\n");}
+                {}
     ;
 var:       ident
-                {printf("var -> ident\n");}
+                {}
    |       ident brack_expr
-                {printf("var -> ident brack_expr\n");}
+                {}
    |       ident brack_expr brack_expr
-                {printf("var -> ident brack_expr brack_expr\n");}
+                {}
    ;
 brack_expr: LBRACKET expression RBRACKET
-                {printf("brack_expr -> LBRACKET expression RBRACKET\n");}
+                {}
           ;
 
 ident: IDENT
-        {printf("ident -> IDENT %s\n", $1);}
+        {$$ = $1;}
      ;
+
+number: NUMBER
+          {/*$$ = $1;*/}
+      ;
 
 %%
 
