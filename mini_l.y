@@ -1,4 +1,5 @@
 %{
+#include <iostream>
 #include <stdio.h>
 #include <memory.h>
 #include <cstdlib>
@@ -11,11 +12,12 @@ extern int currPos;
 
 bool no_error = true;
 
+/*
 struct dec_type {
     char* code;
     std::vector<char*> idList;
 };
-
+*/
 /*
 struct idents {
     char* code;
@@ -26,16 +28,26 @@ struct idents {
 
 %error-verbose
 
+%code requires {
+    #include<list>
+    #include<string>
+    struct dec_type {
+        std::string *code;
+        enum types{SCALAR, ARR, ARRARR} type;
+    };
+}
+
 %union yylval{
-    char *s;
-    struct dec_type *dec;
+    std::string *st;
+    dec_type *dec;
+    std::list<std::string*> *idList;
 }
 
 %token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY 
 %token INT IF ARRAY OF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE 
 %token READ WRITE TRUE FALSE RETURN
 %token SEMICOLON COMMA
-%token COLON NUMBER <s>IDENT
+%token COLON NUMBER <st>IDENT
 
 %right ASSIGN
 %left OR
@@ -50,52 +62,51 @@ struct idents {
 
 %start start_program
 
-%type<s> program functions function ident declaration statements statement 
-%type<s> arr number ids
-%type<dec> declarations
+%type<st> program functions
+%type<st> function ident declarations statements statement 
+%type<st> arr number
+%type<idList> ids
+%type<dec> declaration
 
 %%
 
 start_program: program
-                 {if(no_error) printf("%s\n", $1);}
+                 {if(no_error) std::cout << *$1 << std::endl;}
              ;
 
 program:      functions 
-                {$$ = (char*)malloc(1 + strlen($1));
-                 $$ = $1;
+                {$$ = new std::string();
+                 *$$ = *$1;
                 }
          ;
 functions:    /*epsilon*/
-                {$$ = strdup("");
+                {$$ = new std::string();
+                 *$$ = "";
                 }
          |    function functions
-                {$$ = (char*)malloc(1 + strlen($1) + strlen($2));
-                 strcpy($$, $1);
-                 strncat($$, $2, strlen($2));
+                {$$ = new std::string();
+                 *$$ = *$1 + " " + *$2 + "\n";
                 }
          |    error functions
                 {no_error = false; yyerrok;}
          ;
 function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
-                {$$ = (char*)malloc(1 + 5 + strlen($2) + 1 /* + strlen($5->code) + strlen($8->code) + strlen($11) */);
-                 strcpy($$, "func ");
-                 strncat($$, $2, strlen($2));
-                 strncat($$, "\n", 1);
-                 //strncat($$, $5->code, strlen($5->code));
-                 //strncat($$, $8->code, strlen($8->code));
-                 //strncat($$, $11, strlen($11));
+                {$$ = new std::string();
+                 *$$ = "func ";
+                 *$$ += *$2;
+                 *$$ += "\n";
+                 *$$ += *$5;
+                 *$$ += *$8;
                 }
         ;
 declarations: /* eps */
-                {// $$->code = strdup(""); // FIXME: segfault???
+                {$$ = new std::string();
+                 *$$ = "";
                 }
             | declaration SEMICOLON declarations
-                {//$$->code = (char*)malloc(1 + strlen($1) /*+ 1 + strlen($3->code) + 1*/);
-                 //strcpy($$->code, $1);
-                 //strncat($$->code, "\n", 1);
-                 //strncat($$->code, $3->code, strlen($3->code));
-                 //strncat($$->code, "\n", 1);
-                 //$$->code = "blah1";
+                {$$ = new std::string();
+                 if ($1 != NULL)
+                   *$$ = *($1->code) + "\n" + *$3;
                 }
             | declaration error declarations
                 {no_error = false; yyerrok;}
@@ -105,41 +116,41 @@ declarations: /* eps */
                 {no_error = false; yyerrok;}
             ;
 declaration:  ids INT
-                {//$$ = (char*)malloc(3 + strlen($1) + 1);
-                 //strcpy($$, ". ");
-                 //strcat($$, $1);
-                 //$$ = "blah";
+                {$$ = (dec_type*)malloc(sizeof(dec_type));
+                 $$->code = new std::string();
+                 //*($$->code) =  ". " + *$1; // + "\n";
+                 $$->type = dec_type::SCALAR;
                 }
               | ids ARRAY arr OF INT
-                {//$$ = (char*)malloc(4 + strlen($1) + 2 + strlen($3));
-                 //strcpy($$, "[] ");
-                 //strcat($$, $1);
-                 //strcat($$, ", ");
-                 //strcat($$, $3);
+                {$$ = (dec_type*)malloc(sizeof(dec_type));
+                 $$->code = new std::string();
+                 //*($$->code) = ". [] " + *$1; // + ", " + *$3 + "\n";
+                 $$->type = dec_type::ARR;
                 }
               | ids ARRAY arr arr OF INT
-                {//$$ = (char*)malloc(11);
-                 //strcpy($$, "dec 2d arr");
+                {$$ = (dec_type*)malloc(sizeof(dec_type));
+                 $$->type = dec_type::ARRARR;
                 }
               ;
 arr :       LBRACKET number RBRACKET
-                {//$$ = "";
+                {
                 }
     ;
 ids:        ident COLON
-                {$$ = strdup($1);}
+                {$$ = new std::list<string*>;
+                 // add ident
+                }
    |        ident COMMA ids
-                {//$$ = (char*)malloc(1 + strlen($1));
-                 //strcpy($$, $1);
+                {$$ = new std::list<string*>;
+                // add ident and ids
                 }
    ;
 statements: statement SEMICOLON
-                {$$ = (char*)malloc(12);
-                 $$ = strdup("statements\n");
+                {
                 }
           |  statement SEMICOLON statements
-                {$$ = (char*)malloc(22);
-                 $$ = strdup("statement statements\n");}
+                {
+                }
           |  statement error statements
                 {no_error = false; yyerrok;}
           |  statement error
@@ -281,7 +292,9 @@ brack_expr: LBRACKET expression RBRACKET
           ;
 
 ident: IDENT
-        {$$ = $1;}
+        {$$ = new std::string();
+         *$$ = *$1;
+        }
      ;
 
 number: NUMBER

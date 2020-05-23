@@ -62,8 +62,8 @@ ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
 ":="    {currPos += yyleng; return ASSIGN;}
 ":"     {currPos += yyleng; return COLON;}
 
-{DIGIT}+                  {currPos += yyleng; yylval.s = strdup(yytext); return NUMBER;}
-{ID}                      {currPos += yyleng; yylval.s = strdup(yytext); return IDENT;}
+{DIGIT}+                  {currPos += yyleng; yylval.st = new std::string(strdup(yytext)); return NUMBER;}
+{ID}                      {currPos += yyleng; yylval.st = new std::string(strdup(yytext)); return IDENT;}
 
 ({DIGIT}+|"_"+){ID}        {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext);}
 {ID}"_"+                   {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext);}
