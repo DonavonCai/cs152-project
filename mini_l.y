@@ -29,7 +29,7 @@ struct idents {
 %error-verbose
 
 %code requires {
-    #include<list>
+    #include<vector>
     #include<string>
     struct dec_type {
         std::string *code;
@@ -40,14 +40,14 @@ struct idents {
 %union yylval{
     std::string *st;
     dec_type *dec;
-    std::list<std::string*> *idList;
+    std::vector<std::string*> *idList;
 }
 
 %token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY 
 %token INT IF ARRAY OF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE 
 %token READ WRITE TRUE FALSE RETURN
 %token SEMICOLON COMMA
-%token COLON NUMBER <st>IDENT
+%token COLON <st>NUMBER <st>IDENT
 
 %right ASSIGN
 %left OR
@@ -82,10 +82,12 @@ program:      functions
 functions:    /*epsilon*/
                 {$$ = new std::string();
                  *$$ = "";
-                }
+                } 
          |    function functions
                 {$$ = new std::string();
-                 *$$ = *$1 + " " + *$2 + "\n";
+                 *$$ = *$1 + " " + *$2;
+                 if(*$2 != "")
+                    *$$ += "\n";
                 }
          |    error functions
                 {no_error = false; yyerrok;}
@@ -97,6 +99,7 @@ function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINL
                  *$$ += "\n";
                  *$$ += *$5;
                  *$$ += *$8;
+                 // *$$ += *$11;
                 }
         ;
 declarations: /* eps */
@@ -106,7 +109,9 @@ declarations: /* eps */
             | declaration SEMICOLON declarations
                 {$$ = new std::string();
                  if ($1 != NULL)
-                   *$$ = *($1->code) + "\n" + *$3;
+                   *$$ = *($1->code);
+
+                 *$$ += *$3;
                 }
             | declaration error declarations
                 {no_error = false; yyerrok;}
@@ -118,31 +123,46 @@ declarations: /* eps */
 declaration:  ids INT
                 {$$ = (dec_type*)malloc(sizeof(dec_type));
                  $$->code = new std::string();
-                 //*($$->code) =  ". " + *$1; // + "\n";
+                 *$$->code = "";
+                 // iterate through id list
+                 for (int i = 0; i < $1->size(); i++) {
+                    *$$->code += ". " + *($1->at(i)) + "\n";
+                 }
                  $$->type = dec_type::SCALAR;
                 }
               | ids ARRAY arr OF INT
                 {$$ = (dec_type*)malloc(sizeof(dec_type));
                  $$->code = new std::string();
-                 //*($$->code) = ". [] " + *$1; // + ", " + *$3 + "\n";
+                 *$$->code = "";
+                 for (int i = 0; i < $1->size(); i++) {
+                    *$$->code += ".[] " + *($1->at(i)) + ", " + *$3 + "\n";
+                 }
                  $$->type = dec_type::ARR;
                 }
               | ids ARRAY arr arr OF INT
-                {$$ = (dec_type*)malloc(sizeof(dec_type));
+                {$$ = (dec_type*)malloc(sizeof(dec_type)); // TODO: implement 2d array
                  $$->type = dec_type::ARRARR;
                 }
               ;
 arr :       LBRACKET number RBRACKET
-                {
+                {$$ = new std::string();
+                 *$$ = *$2;
                 }
     ;
 ids:        ident COLON
-                {$$ = new std::list<string*>;
-                 // add ident
+                {$$ = new std::vector<std::string*>;
+                 std::string *s = new std::string();
+                 *s = *$1;
+                 $$->push_back(s);
                 }
    |        ident COMMA ids
-                {$$ = new std::list<string*>;
-                // add ident and ids
+                {$$ = new std::vector<std::string*>;
+                 std::string*s = new std::string();
+                 *s = *$1;
+                 $$->push_back(s);
+                 for (int i = 0; i < $3->size(); i++) {
+                    $$->push_back($3->at(i));
+                 }
                 }
    ;
 statements: statement SEMICOLON
@@ -298,7 +318,9 @@ ident: IDENT
      ;
 
 number: NUMBER
-          {/*$$ = $1;*/}
+          {$$ = new std::string();
+           *$$ = *$1;
+          }
       ;
 
 %%
