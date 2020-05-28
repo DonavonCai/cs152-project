@@ -1,6 +1,16 @@
 %{ // definition
+#include <iostream>
 #include "y.tab.h"
-    int currLine = 1; int currPos = 1;
+#define YY_DECL yy::parser::symbol_type yylex()
+
+static yy::location loc;
+//int currLine = 1; int currPos = 1;
+%}
+
+%option noyywrap
+
+%{
+#define YY_USER_ACTION loc.columns(yyleng);
 %}
     
 DIGIT   [0-9]
@@ -9,58 +19,64 @@ ID      {LETTER}({LETTER}|{DIGIT}|"_"+({LETTER}|{DIGIT}))*
     
 %%
 
+%{
+loc.step();
+%}
+
 "##".*          {/* do nothing. flex will not match newline with . */ }
 
-"function"      {currPos += yyleng; return FUNCTION;}
-"beginparams"   {currPos += yyleng; return BEGINPARAMS;}
-"endparams"     {currPos += yyleng; return ENDPARAMS;}
-"beginlocals"   {currPos += yyleng; return BEGINLOCALS;}
-"endlocals"     {currPos += yyleng; return ENDLOCALS;}
-"beginbody"     {currPos += yyleng; return BEGINBODY;}
-"endbody"       {currPos += yyleng; return ENDBODY;}
-"integer"       {currPos += yyleng; return INT;}
-"array"         {currPos += yyleng; return ARRAY;}
-"of"            {currPos += yyleng; return OF;}
-"if"            {currPos += yyleng; return IF;}
-"then"          {currPos += yyleng; return THEN;}
-"endif"         {currPos += yyleng; return ENDIF;}
-"else"          {currPos += yyleng; return ELSE;}
-"while"         {currPos += yyleng; return WHILE;}
-"do"            {currPos += yyleng; return DO;}
-"for"           {currPos += yyleng; return FOR;}
-"beginloop"     {currPos += yyleng; return BEGINLOOP;}
-"endloop"       {currPos += yyleng; return ENDLOOP;}
-"continue"      {currPos += yyleng; return CONTINUE;}
-"read"          {currPos += yyleng; return READ;}
-"write"         {currPos += yyleng; return WRITE;}
-"and"           {currPos += yyleng; return AND;}
-"or"            {currPos += yyleng; return OR;}
-"not"           {currPos += yyleng; return NOT;}
-"true"          {currPos += yyleng; return TRUE;}
-"false"         {currPos += yyleng; return FALSE;}
-"return"        {currPos += yyleng; return RETURN;}
+"function"      {currPos += yyleng; return yy::parser::make_FUNCTION(loc);}
+"beginparams"   {currPos += yyleng; return yy:parser::make_BEGINPARAMS(loc);}
+"endparams"     {currPos += yyleng; return yy::parser::make_ENDPARAMS(loc);}
+"beginlocals"   {currPos += yyleng; return yy::parser::make_BEGINLOCALS(loc);}
+"endlocals"     {currPos += yyleng; return yy::parser::make_ENDLOCALS(loc);}
+"beginbody"     {currPos += yyleng; return yy::parser::make_BEGINBODY(loc);}
+"endbody"       {currPos += yyleng; return yy::parser::make_ENDBODY(loc);}
+"integer"       {currPos += yyleng; return yy::parser::make_INT(loc);}
+"array"         {currPos += yyleng; return yy::parser::make_ARRAY(loc);}
+"of"            {currPos += yyleng; return yy::parser::make_OF(loc);}
+"if"            {currPos += yyleng; return yy::parser::make_IF(loc);}
+"then"          {currPos += yyleng; return yy::parser::make_THEN(loc);}
+"endif"         {currPos += yyleng; return yy::parser::make_ENDIF(loc);}
+"else"          {currPos += yyleng; return yy::parser::make_ELSE(loc);}
+"while"         {currPos += yyleng; return yy::parser::make_WHILE(loc);}
+"do"            {currPos += yyleng; return yy::parser::make_DO(loc);}
+"for"           {currPos += yyleng; return yy::parser::make_FOR(loc);}
+"beginloop"     {currPos += yyleng; return yy::parser::make_BEGINLOOP(loc);}
+"endloop"       {currPos += yyleng; return yy::parser::make_ENDLOOP(loc);}
+"continue"      {currPos += yyleng; return yy::parser::make_CONTINUE(loc);}
+"read"          {currPos += yyleng; return yy::parser::make_READ(loc);}
+"write"         {currPos += yyleng; return yy::parser::make_WRITE(loc);}
+"and"           {currPos += yyleng; return yy::parser::make_AND(loc);}
+"or"            {currPos += yyleng; return yy::parser::make_OR(loc);}
+"not"           {currPos += yyleng; return yy::parser::make_NOT(loc);}
+"true"          {currPos += yyleng; return yy::parser::make_TRUE(loc);}
+"false"         {currPos += yyleng; return yy::parser::make_FALSE(loc);}
+"return"        {currPos += yyleng; return yy::parser::make_RETURN(loc);}
     
-"-"     {currPos += yyleng; return MINUS;}
-"+"     {currPos += yyleng; return PLUS;}
-"*"     {currPos += yyleng; return MULT;}
-"/"     {currPos += yyleng; return DIV;}
-"%"     {currPos += yyleng; return MOD;}
+"-"     {currPos += yyleng; return yy::parser::make_MINUS(loc);}
+"+"     {currPos += yyleng; return yy::parser::make_PLUS(loc);}
+"*"     {currPos += yyleng; return yy::parser::make_MULT(loc);}
+"/"     {currPos += yyleng; return yy::parser::make_DIV(loc);}
+"%"     {currPos += yyleng; return yy::parser::make_MOD(loc);}
 
-"=="    {currPos += yyleng; return EQ;}
-"<>"    {currPos += yyleng; return NEQ;}
-"<="    {currPos += yyleng; return LE;}
-">="    {currPos += yyleng; return GE;}
-"<"     {currPos += yyleng; return LT;}
-">"     {currPos += yyleng; return GT;}
+"=="    {currPos += yyleng; return yy::parser::make_EQ(loc);}
+"<>"    {currPos += yyleng; return yy::parser::make_NEQ(loc);}
+"<="    {currPos += yyleng; return yy::parser::make_LE(loc);}
+">="    {currPos += yyleng; return yy::parser::make_GE(loc);}
+"<"     {currPos += yyleng; return yy::parser::make_LT(loc);}
+">"     {currPos += yyleng; return yy::parser::make_GT(loc);}
 
-";"     {currPos += yyleng; return SEMICOLON;}
-","     {currPos += yyleng; return COMMA;}
-"("     {currPos += yyleng; return LPAREN;}
-")"     {currPos += yyleng; return RPAREN;}
-"["     {currPos += yyleng; return LBRACKET;}
-"]"     {currPos += yyleng; return RBRACKET;}
-":="    {currPos += yyleng; return ASSIGN;}
-":"     {currPos += yyleng; return COLON;}
+";"     {currPos += yyleng; return yy::parser::make_SEMICOLON(loc);}
+","     {currPos += yyleng; return yy::parser::make_COMMA(loc);}
+"("     {currPos += yyleng; return yy::parser::make_LPAREN(loc);}
+")"     {currPos += yyleng; return yy::parser::make_RPAREN(loc);}
+"["     {currPos += yyleng; return yy::parser::make_LBRACKET(loc);}
+"]"     {currPos += yyleng; return Ryy::parser::make_BRACKET(loc);}
+":="    {currPos += yyleng; return yy::parser::make_ASSIGN(loc);}
+":"     {currPos += yyleng; return yy::parser::make_COLON(loc);}
+
+<<EOF>> {return yy::parser::make_END(loc);}
 
 {DIGIT}+                  {currPos += yyleng; yylval.st = new std::string(strdup(yytext)); return NUMBER;}
 {ID}                      {currPos += yyleng; yylval.st = new std::string(strdup(yytext)); return IDENT;}

@@ -1,30 +1,22 @@
 %{
+// for errors, @1, @2 for location
 #include <iostream>
 #include <stdio.h>
-#include <memory.h>
 #include <cstdlib>
 #include<vector>
+#include "y.tab.h"
+
 extern FILE *yyin;
 void yyerror(const char* msg);
-int yylex();
+//int yylex();
 extern int currLine;
 extern int currPos;
 
 bool no_error = true;
 
-/*
-struct dec_type {
-    char* code;
-    std::vector<char*> idList;
-};
-*/
-/*
-struct idents {
-    char* code;
-    list<char*> l;
-}
-*/
+yy::parser::symbol_type yylex();
 %}
+
 
 %error-verbose
 

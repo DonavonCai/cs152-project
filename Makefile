@@ -1,8 +1,6 @@
-output: lex.yy.c y.tab.c
-	g++ -std=c++11 -o parser y.tab.c lex.yy.c -lfl
-lex.yy.c:
-	flex mini_l.lex
-y.tab.c:
+parser: mini_l.lex mini_l.y
 	bison -v -d --file-prefix=y mini_l.y
+	flex mini_l.lex
+	g++ -std=c++11 -o parser y.tab.c lex.yy.c -lfl
 clean:
-	rm -f y.tab.h y.tab.c lex.yy.c y.output parser lexer
+	rm -f y.tab.* lex.yy.c y.output parser
