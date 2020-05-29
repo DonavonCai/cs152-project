@@ -1,8 +1,9 @@
 #!/bin/bash
 
-testfile="incorrect.min"
-outputfile="out.txt"
+testfile="testprog.min"
+outputfile="out.mil"
 
 printf 'Running test: %s\n' "$testfile"
-cat $testfile | ../parser > out.mil 2>&1
+cat $testfile | ../parser > $outputfile 2>&1
+printf 'MIL code has been output to %s\n' "$outputfile"
 

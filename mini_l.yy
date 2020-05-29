@@ -43,8 +43,30 @@ yy::parser::symbol_type yylex();
 	/* define your symbol table, global variables,
 	 * list of keywords or any function you may need here */
 bool no_error = true;
-enum symbol{SCALENAME, ARRNAME, FUNCNAME, KEYWORD};
-std::map<std::string, int> symbol_table; // 0 = scalar, 1 = array name, 2 = function name
+enum symbol{INT, ARRAY, MATRIX, FUNC, KEYWORD};
+
+/* symbol tables */
+
+/* 0 = scalar, 1 = array name, 2 = function name */
+std::map<std::string, int> symbol_table;
+
+/* table of 2d arrays, goes from id to row size 
+   used for calculating indices when array is accessed */
+std::map<std::string, int> array_table;
+
+/* take in coords [n][m] for matrix, return a single index for array stored in row major order
+   idx is the nth entry in the mth row  */
+int row_major(std::string a, int n, int m) {
+    int idx = 0;
+    int rsz = array_table[a];
+
+    for(int i = 0; i < m; i++) {
+        idx += rsz;
+    }
+    idx += n;
+
+    return idx;
+}
 	/* end of your code */
 }
 
@@ -73,7 +95,8 @@ std::map<std::string, int> symbol_table; // 0 = scalar, 1 = array name, 2 = func
 %type<std::string> program functions function
 %type<std::string> ident declarations statements statement
 %type<std::string> expressions expression nonempty_expressions multiplicative_expr
-%type<std::string> arr number vars var term num_term
+%type<std::string> vars var term num_term
+%type<int> number arr
 %type<std::vector<std::string>> ids
 %type<dec_type> declaration
 	/* end of token specifications */
@@ -122,6 +145,8 @@ function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINL
                  $$ += $8;
                  $$ += "\n";
                  $$ += $11;
+                 $$ += "\n";
+                 $$ += "endfunc\n";
                 }
         ;
 declarations: /* eps */
@@ -143,24 +168,30 @@ declaration:  ids INT
                  // iterate through id list
                  for (int i = 0; i < $1.size(); i++) {
                     $$.code += ". " + $1.at(i);
-                    // symbol_table[$1.at(i)] = "0";// TODO: update symbol table
+                    symbol_table[$1.at(i)] = INT;
                  }
                  $$.type = dec_type::SCALAR;
                 }
               | ids ARRAY arr OF INT
                 {$$.code = "";
                  for (int i = 0; i < $1.size(); i++) {
-                    $$.code += ".[] " + $1.at(i) + ", " + $3;
+                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3);
+                    symbol_table[$1.at(i)] = ARRAY;
                  }
                  $$.type = dec_type::ARR;
                 }
               | ids ARRAY arr arr OF INT
-                {$$.type = dec_type::ARRARR; // TODO: implement 2d array
+                {$$.type = dec_type::ARRARR;
+                 $$.code = "";
+                 for(int i = 0; i < $1.size(); i++) {
+                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3 * $4);
+                    symbol_table[$1.at(i)] = MATRIX;
+                    array_table[$1.at(i)] = ($3); // pass id and row size to array table
+                 }
                 }
               ;
 arr :       LBRACKET number RBRACKET
-                {$$ = $2;
-                }
+                {$$ = $2;}
     ;
 ids:        ident COLON
                 {$$.push_back($1);
@@ -289,7 +320,7 @@ num_term:     var
         |     MINUS var %prec UMINUS
                 {}
         |     number
-                {$$ = $1;}
+                {$$ = std::to_string($1);}
         |     MINUS number %prec UMINUS
                 {}
         |     LPAREN expression RPAREN
@@ -309,9 +340,11 @@ vars:       var
 var:       ident
                {$$ = $1;}
    |       ident brack_expr
-               {}
+               { // 1d array
+               }
    |       ident brack_expr brack_expr
-               {}
+               { // 2d array
+               }
    ;
 brack_expr: LBRACKET expression RBRACKET
                 {}
@@ -322,7 +355,7 @@ ident: IDENT
      ;
 
 number: NUMBER
-          {$$ = std::to_string($1);}
+          {$$ = $1;}
       ;
 
 

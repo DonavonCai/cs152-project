@@ -1,0 +1,5 @@
+func main
+.[] a, 200
+= a, 1
+endfunc
+ 

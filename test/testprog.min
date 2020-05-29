@@ -2,7 +2,7 @@ function main;
 beginparams
 endparams
 beginlocals
-a : integer;
+a : array [10][20] of integer;
 endlocals
 beginbody
 a := 1;
