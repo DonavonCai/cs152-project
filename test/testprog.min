@@ -2,9 +2,10 @@ function main;
 beginparams
 endparams
 beginlocals
-a : array [10][20] of integer;
+a : integer;
 endlocals
 beginbody
 a := 1;
+write a;
 endbody
 ## parser should find error on line 8, should be := instead of =

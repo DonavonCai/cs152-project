@@ -95,9 +95,9 @@ int row_major(std::string a, int n, int m) {
 %type<std::string> program functions function
 %type<std::string> ident declarations statements statement
 %type<std::string> expressions expression nonempty_expressions multiplicative_expr
-%type<std::string> vars var term num_term
+%type<std::string> var term num_term
 %type<int> number arr
-%type<std::vector<std::string>> ids
+%type<std::vector<std::string>> ids vars
 %type<dec_type> declaration
 	/* end of token specifications */
 
@@ -145,7 +145,6 @@ function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINL
                  $$ += $8;
                  $$ += "\n";
                  $$ += $11;
-                 $$ += "\n";
                  $$ += "endfunc\n";
                 }
         ;
@@ -206,7 +205,7 @@ ids:        ident COLON
 statements: statement SEMICOLON
                 {$$ = $1;}
           |  statement SEMICOLON statements
-                {$$ = $1 + "\n" + $3;}
+                {$$ = $1 + $3;}
           |  statement error statements
                 {no_error = false; yyerrok;}
           |  statement error
@@ -221,7 +220,7 @@ statements: statement SEMICOLON
                 {no_error = false; yyerrok;}
           ;
 statement:  var ASSIGN expression
-                {$$ = "= " + $1 + ", " + $3;}
+                {$$ = "= " + $1 + ", " + $3 + "\n";}
         |   IF bool_expr THEN statements ENDIF
                 {$$ = "";}
         |   IF bool_expr THEN statements ELSE statements ENDIF
@@ -233,9 +232,17 @@ statement:  var ASSIGN expression
         |   FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP
                 {$$ = "";}
         |   READ vars
-                {$$ = "";}
+                {$$ = "";
+                 for (int i = 0; i < $2.size(); i++) {
+                    $$ += ".< " + $2.at(i) + "\n";
+                 }
+                }
         |   WRITE vars
-                {$$ = "";}
+                {$$ = "";
+                 for (int i = 0; i < $2.size(); i++) {
+                    $$ += ".> " + $2.at(i) + "\n";
+                 }
+                }
         |   CONTINUE
                 {$$ = "";}
         |   RETURN expression
@@ -297,9 +304,11 @@ nonempty_expressions: expression
 expression:          multiplicative_expr
                        {$$ = $1;}
           |          multiplicative_expr PLUS expression
-                       {}
+                       {// temp variable?
+                       }
           |          multiplicative_expr MINUS expression
-                       {}
+                       { // temp variable?
+                       }
           ;
 multiplicative_expr: term
                        {$$ = $1;}
@@ -333,9 +342,13 @@ id_term:      ident LPAREN expressions RPAREN
        ;
 
 vars:       var
-               {}
+               {$$.push_back($1);}
     |       var COMMA vars
-               {}
+               {$$.push_back($1);
+                for (int i = 0; i < $3.size(); i++) {
+                    $$.push_back($3.at(i));
+                }
+               }
     ;
 var:       ident
                {$$ = $1;}
