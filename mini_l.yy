@@ -23,6 +23,11 @@ struct dec_type {
     std::string code;
     enum type{SCALAR, ARR, ARRARR} type;
 };
+
+struct expr_tmp {
+    std::string tmpVar;
+    std::string tmpEval;
+};
 	/* end the structures for non-terminal types */
 }
 
@@ -67,6 +72,16 @@ int row_major(std::string a, int n, int m) {
 
     return idx;
 }
+
+int numTemps = 0;
+std::string new_temp() {
+    numTemps++;
+    std::string temp = "__temp__";
+    temp += std::to_string(numTemps);
+    symbol_table[temp] = 0;
+
+    return temp;
+}
 	/* end of your code */
 }
 
@@ -94,8 +109,9 @@ int row_major(std::string a, int n, int m) {
 
 %type<std::string> program functions function
 %type<std::string> ident declarations statements statement
-%type<std::string> expressions expression nonempty_expressions multiplicative_expr
+%type<std::string> expressions nonempty_expressions multiplicative_expr
 %type<std::string> var term num_term
+%type<expr_tmp> expression
 %type<int> number arr
 %type<std::vector<std::string>> ids vars
 %type<dec_type> declaration
@@ -122,8 +138,7 @@ program:      functions
                 }
          ;
 functions:    /*epsilon*/
-                {$$ = "";
-                } 
+                {$$ = "";} 
          |    function functions
                 {$$ = $1 + " " + $2;
                  $$ = $1 + " " + $2;
@@ -139,18 +154,15 @@ function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINL
                  if ($5 != "")
                     $$ += "\n";
                  $$ += $5;
-
                  if ($8 != "")
                     $$ += "\n";
                  $$ += $8;
-                 $$ += "\n";
                  $$ += $11;
                  $$ += "endfunc\n";
                 }
         ;
 declarations: /* eps */
-                {$$ = "";
-                }
+                {$$ = "";}
             | declaration SEMICOLON declarations
                 {$$ = $1.code;
                  $$ += $3;
@@ -166,7 +178,7 @@ declaration:  ids INT
                 {$$.code = "";
                  // iterate through id list
                  for (int i = 0; i < $1.size(); i++) {
-                    $$.code += ". " + $1.at(i);
+                    $$.code += ". " + $1.at(i) + "\n";
                     symbol_table[$1.at(i)] = INT;
                  }
                  $$.type = dec_type::SCALAR;
@@ -174,7 +186,7 @@ declaration:  ids INT
               | ids ARRAY arr OF INT
                 {$$.code = "";
                  for (int i = 0; i < $1.size(); i++) {
-                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3);
+                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3) + "\n";
                     symbol_table[$1.at(i)] = ARRAY;
                  }
                  $$.type = dec_type::ARR;
@@ -183,7 +195,7 @@ declaration:  ids INT
                 {$$.type = dec_type::ARRARR;
                  $$.code = "";
                  for(int i = 0; i < $1.size(); i++) {
-                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3 * $4);
+                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3 * $4) + "\n";
                     symbol_table[$1.at(i)] = MATRIX;
                     array_table[$1.at(i)] = ($3); // pass id and row size to array table
                  }
@@ -193,8 +205,7 @@ arr :       LBRACKET number RBRACKET
                 {$$ = $2;}
     ;
 ids:        ident COLON
-                {$$.push_back($1);
-                }
+                {$$.push_back($1);}
    |        ident COMMA ids
                 {$$.push_back($1);
                  for (int i = 0; i < $3.size(); i++) {
@@ -220,7 +231,9 @@ statements: statement SEMICOLON
                 {no_error = false; yyerrok;}
           ;
 statement:  var ASSIGN expression
-                {$$ = "= " + $1 + ", " + $3 + "\n";}
+                {$$ = $3.tmpEval; // first evaluate expression
+                 $$ += "= " + $1 + ", " + $3.tmpVar + "\n"; // and use the evaluated temp
+                }
         |   IF bool_expr THEN statements ENDIF
                 {$$ = "";}
         |   IF bool_expr THEN statements ELSE statements ENDIF
@@ -246,9 +259,13 @@ statement:  var ASSIGN expression
         |   CONTINUE
                 {$$ = "";}
         |   RETURN expression
-                {$$ = "";}
+                {$$ = "";
+                 // $$ += expression's temps
+                 // $$ += "ret " + expression's final value
+                }
         ;
 bool_expr:  relation_and_expr
+                { }
          |  relation_and_expr OR bool_expr
                 { }
          ;
@@ -275,18 +292,18 @@ relation_expr:       expression comp expression
                         {}
              ;
 
-comp:                EQ
-                       {} 
-    |                NEQ
-                       {} 
-    |                LT
-                       {} 
-    |                GT
-                       {} 
-    |                LE
-                       {} 
-    |                GE
-                       {}
+comp: EQ
+        {} 
+    | NEQ
+        {} 
+    | LT
+        {} 
+    | GT
+        {} 
+    | LE
+        {} 
+    | GE
+        {}
     ;
 
 expressions:         /* eps */
@@ -296,42 +313,52 @@ expressions:         /* eps */
            ;
 
 nonempty_expressions: expression
-                        {$$ = $1;}
+                        {$$ = $1.tmpVar;}
                     | expression COMMA nonempty_expressions
                         {}
                     ;
 
 expression:          multiplicative_expr
-                       {$$ = $1;}
+                       {$$.tmpVar = $1;
+                        $$.tmpEval = "";
+                       }
           |          multiplicative_expr PLUS expression
-                       {// temp variable?
+                       {$$.tmpVar = new_temp();
+                        $$.tmpEval = ". " + $$.tmpVar + "\n"; // symbol table is updated in new_temp();
+                        $$.tmpEval += "+ " + $$.tmpVar + ", " + $1 + ", " + $3.tmpVar + "\n";
                        }
           |          multiplicative_expr MINUS expression
-                       { // temp variable?
+                       {$$.tmpVar = new_temp();
+                        $$.tmpEval = ". " + $$.tmpVar + "\n"; // symbol table is updated in new_temp();
+                        $$.tmpEval += "- " + $$.tmpVar + ", " + $1 + ", " + $3.tmpVar + "\n";
                        }
           ;
 multiplicative_expr: term
-                       {$$ = $1;}
+                       {$$ = $1;
+                       }
                    | term MULT multiplicative_expr
-                       {}
+                       {
+                       }
                    | term DIV multiplicative_expr
                        {}
                    | term MOD multiplicative_expr
                        {}
                    ;
 term:       num_term
-                {$$ = $1;}
+                {
+                $$ = $1;}
     |       id_term
                 {}
     ;
 num_term:     var
                 {$$ = $1;}
         |     MINUS var %prec UMINUS
-                {}
+                {$$ = "-" + $2;}
         |     number
                 {$$ = std::to_string($1);}
         |     MINUS number %prec UMINUS
-                {}
+                {std::string num = std::to_string($2);
+                $$ = "-" + num;}
         |     LPAREN expression RPAREN
                 {}
         |     MINUS LPAREN expression RPAREN %prec UMINUS

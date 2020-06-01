@@ -1,6 +1,8 @@
 func main
 . a
-= a, 1
+. __temp__1
++ __temp__1, 1, 2
+= a, __temp__1
 .> a
 endfunc
  
