@@ -1,6 +1,16 @@
 func main
 . a
-= a, 1
-.> a
+. b
+. c
+. __temp__1
+- __temp__1, 0, 1
+= a, __temp__1
+= b, 2
+. __temp__2
++ __temp__2, a, b
+. __temp__3
+- __temp__3, 0, __temp__2
+= c, __temp__3
+.> c
 endfunc
  

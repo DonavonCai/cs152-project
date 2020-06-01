@@ -374,23 +374,28 @@ num_term:     var
                  $$.tmpEval = "";
                 }
         |     MINUS var %prec UMINUS
-                {$$.tmpVar = "-" + $2;
-                 $$.tmpEval = "";
+                {$$.tmpVar = new_temp();
+                 $$.tmpEval = ". " + $$.tmpVar + "\n";
+                 $$.tmpEval += "- " + $$.tmpVar + ", 0 ," + $2 + "\n";
                 }
         |     number
                 {$$.tmpVar = std::to_string($1);
                  $$.tmpEval = "";
                 }
         |     MINUS number %prec UMINUS
-                {$$.tmpVar = "-" + std::to_string($2);
-                 $$.tmpEval = "";
+                {$$.tmpVar = new_temp();
+                 $$.tmpEval = ". " + $$.tmpVar + "\n";
+                 $$.tmpEval += "- " + $$.tmpVar + ", 0, " + std::to_string($2) + "\n";
                 }
         |     LPAREN expression RPAREN
                 {$$.tmpVar = $2.tmpVar;
                  $$.tmpEval = $2.tmpEval;
                 }
         |     MINUS LPAREN expression RPAREN %prec UMINUS
-                { // TODO: same thing as lparen rparen except minus? (try multiplying by negative one)
+                {$$.tmpVar = new_temp();
+                 $$.tmpEval = $3.tmpEval; // first evaluate the expression
+                 $$.tmpEval += ". " + $$.tmpVar + "\n"; // then declare a new temp
+                 $$.tmpEval += "- " + $$.tmpVar + ", 0, " + $3.tmpVar + "\n"; // then do 0 - expression and store it in the new temp
                 }
         ;
 id_term:      ident LPAREN expressions RPAREN
