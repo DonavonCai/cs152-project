@@ -1,17 +1,6 @@
 func main
 . a
-= a, 2
-. __temp__1
-* __temp__1, a, a
-. __temp__2
-* __temp__2, a, __temp__1
-. __temp__3
-* __temp__3, a, __temp__2
-. __temp__4
-+ __temp__4, __temp__3, 1
-. __temp__5
-+ __temp__5, 1, __temp__4
-= a, __temp__5
+= a, 1
 .> a
 endfunc
  
