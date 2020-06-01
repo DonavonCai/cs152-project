@@ -109,9 +109,9 @@ std::string new_temp() {
 
 %type<std::string> program functions function
 %type<std::string> ident declarations statements statement
-%type<std::string> expressions nonempty_expressions multiplicative_expr
+%type<std::string> expressions nonempty_expressions
 %type<std::string> var term num_term
-%type<expr_tmp> expression
+%type<expr_tmp> expression multiplicative_expr
 %type<int> number arr
 %type<std::vector<std::string>> ids vars
 %type<dec_type> declaration
@@ -319,34 +319,51 @@ nonempty_expressions: expression
                     ;
 
 expression:          multiplicative_expr
-                       {$$.tmpVar = $1;
-                        $$.tmpEval = "";
+                       {$$.tmpVar = $1.tmpVar;
+                        $$.tmpEval = $1.tmpEval;
                        }
           |          multiplicative_expr PLUS expression
                        {$$.tmpVar = new_temp();
-                        $$.tmpEval = ". " + $$.tmpVar + "\n"; // symbol table is updated in new_temp();
-                        $$.tmpEval += "+ " + $$.tmpVar + ", " + $1 + ", " + $3.tmpVar + "\n";
+
+                        $$.tmpEval = $1.tmpEval; // evaluate multiplicative_expr
+                        $$.tmpEval += $3.tmpEval; // evaluate expression
+
+                        $$.tmpEval += ". " + $$.tmpVar + "\n"; // declare new temp
+                        $$.tmpEval += "+ " + $$.tmpVar + ", " + $1.tmpVar + ", " + $3.tmpVar + "\n";
                        }
           |          multiplicative_expr MINUS expression
                        {$$.tmpVar = new_temp();
-                        $$.tmpEval = ". " + $$.tmpVar + "\n"; // symbol table is updated in new_temp();
-                        $$.tmpEval += "- " + $$.tmpVar + ", " + $1 + ", " + $3.tmpVar + "\n";
+                        $$.tmpEval = $1.tmpEval;
+                        $$.tmpEval += $3.tmpEval;
+                        $$.tmpEval += ". " + $$.tmpVar + "\n"; // symbol table is updated in new_temp();
+                        $$.tmpEval += "- " + $$.tmpVar + ", " + $1.tmpVar + ", " + $3.tmpVar + "\n";
                        }
           ;
 multiplicative_expr: term
-                       {$$ = $1;
+                       {$$.tmpVar = $1;
+                        $$.tmpEval = "";
                        }
                    | term MULT multiplicative_expr
-                       {
+                       {$$.tmpVar = new_temp();
+                        $$.tmpEval = $3.tmpEval; // evaluate multiplicative_expr
+                        $$.tmpEval += ". " + $$.tmpVar + "\n"; // declare new temp
+                        $$.tmpEval += "* " + $$.tmpVar + ", " + $1 + ", " + $3.tmpVar + "\n";
                        }
                    | term DIV multiplicative_expr
-                       {}
+                       {$$.tmpVar = new_temp();
+                        $$.tmpEval = $3.tmpEval; // evaluate multiplicative_expr
+                        $$.tmpEval += ". " + $$.tmpVar + "\n"; // declare new temp
+                        $$.tmpEval += "/ " + $$.tmpVar + ", " + $1 + ", " + $3.tmpVar + "\n";
+                       }
                    | term MOD multiplicative_expr
-                       {}
+                       {$$.tmpVar = new_temp();
+                        $$.tmpEval = $3.tmpEval; // evaluate multiplicative_expr
+                        $$.tmpEval += ". " + $$.tmpVar + "\n"; // declare new temp
+                        $$.tmpEval += "% " + $$.tmpVar + ", " + $1 + ", " + $3.tmpVar + "\n";
+                       }
                    ;
 term:       num_term
-                {
-                $$ = $1;}
+                {$$ = $1;}
     |       id_term
                 {}
     ;
