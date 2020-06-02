@@ -158,7 +158,7 @@ function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINL
                  if ($5 != "")
                     $$ += "\n";
                  $$ += $5;
-                 if ($8 != "")
+                 if ($8 != "\n")
                     $$ += "\n";
                  $$ += $8;
                  $$ += $11;
@@ -274,9 +274,8 @@ statement:  var ASSIGN expression
         |   CONTINUE
                 {$$ = "";}
         |   RETURN expression
-                {$$ = "";
-                 // $$ += expression's temps
-                 // $$ += "ret " + expression's final value
+                {$$ = $2.eval;
+                 $$ += "ret " + $2.temp + "\n";
                 }
         ;
 bool_expr:  relation_and_expr

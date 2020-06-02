@@ -1,12 +1,5 @@
 func main
-.[] a, 100
-.[] b, 30
-[]= a, 11, 1
-. __temp__3
-=[] __temp__3, a, 11
-[]= b, 17, __temp__3
-. __temp__4
-=[] __temp__4, b, 17
-.> __temp__4
+. a
+= a, 1
 endfunc
  
