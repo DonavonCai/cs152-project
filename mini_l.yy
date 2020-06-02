@@ -62,7 +62,7 @@ std::map<std::string, int> symbol_table;
    used for calculating indices when array is accessed */
 std::map<std::string, int> array_table;
 
-/* take in coords [n][m] for matrix, return a single index for array stored in row major order
+/* take in coords [n][m] for matrix, return the corresponding row-major order index for existing matrix a
    idx is the nth entry in the mth row  */
 int row_major(std::string a, int n, int m) {
     int idx = 0;
@@ -424,12 +424,13 @@ vars:       var
                }
     ;
 var:       ident
-               {$$.temp = $1;
+               {$$.type = temporary::INT;
+                $$.temp = $1;
                 $$.eval = "";
-                $$.type = temporary::INT;
                }
    |       ident brack_expr
-               {$$.temp = new_temp();// 1d array access
+               {$$.type = temporary::ARRAY;
+                $$.temp = new_temp();// 1d array access
                 $$.array_name = $1;
                 $$.idx = $2.temp;
 
@@ -437,11 +438,20 @@ var:       ident
                 
                 $$.eval += ". " + $$.temp + "\n";
                 $$.eval += "=[] " + $$.temp + ", " + $1 + ", " + $$.idx + "\n";
-
-                $$.type = temporary::ARRAY;
                }
    |       ident brack_expr brack_expr
                {$$.type = temporary::MATRIX;// 2d array access
+                int n = std::stoi($2.temp);
+                int m = std::stoi($3.temp);
+
+                $$.temp = new_temp();
+                $$.array_name = $1;
+                $$.idx = std::to_string(row_major($1, n, m));
+
+                $$.eval = $2.eval + $3.eval; // first evaluate bracket expressions
+
+                $$.eval += ". " + $$.temp + "\n";
+                $$.eval += "=[] " + $$.temp + ", " + $1 + ", " + $$.idx + "\n";
                }
    ;
 brack_expr: LBRACKET expression RBRACKET
