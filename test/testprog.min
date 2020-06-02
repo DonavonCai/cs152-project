@@ -2,12 +2,15 @@ function main;
 beginparams
 endparams
 beginlocals
-a, b, c : integer;
+a : array[10] of integer;
+b : integer;
+c : array[10] of integer;
 endlocals
 beginbody
-a := -1;
-b := 2;
-c := -(a + b);
-write c;
+a[1] := 1;
+b := a[1];
+c[1] := a[1];
+write b;
+write c[1];
 endbody
 ## parser should find error on line 8, should be := instead of =
