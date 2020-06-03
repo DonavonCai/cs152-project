@@ -20,7 +20,8 @@
 #include <functional>
 	/* define the sturctures using as types for non-terminals */
 struct dec_type {
-    std::string code;
+    std::string local_code;
+    std::string param_code;
     enum types{SCALAR, ARR, ARRARR} type;
 };
 
@@ -55,17 +56,18 @@ enum symbol{INT, ARRAY, MATRIX, FUNC, KEYWORD};
 
 /* symbol tables */
 
-/* 0 = scalar, 1 = array name, 2 = function name */
+/* 0 = scalar, 1 = array name, 2 = function name, (id, type) pairs */
 std::map<std::string, int> symbol_table;
 
-/* table of 2d arrays, goes from id to row size 
+/* table of 2d arrays, (id, rowsize) pairs 
    used for calculating indices when array is accessed */
 std::map<std::string, int> array_table;
 
-/* table of function names */
-std::map<std::string, std::string> func_table;
+/* table of function names*/
+std::vector<std::string> func_table;
 
-
+/* list of labels */
+std::vector<std::string> labels;
 
 /* take in coords [n][m] for matrix, return the corresponding row-major order index for existing matrix a
    idx is the nth entry in the mth row  */
@@ -81,6 +83,7 @@ int row_major(std::string a, int n, int m) {
     return idx;
 }
 
+int numParams = 0;
 int numTemps = 0;
 std::string new_temp() {
     numTemps++;
@@ -116,14 +119,13 @@ std::string new_temp() {
 %start start_program
 
 %type<std::string> program functions function
-%type<std::string> ident declarations statements statement
-%type<std::string> expressions nonempty_expressions
+%type<std::string> ident statements statement
 
-%type<temporary> expression multiplicative_expr term num_term var brack_expr
+%type<temporary> expression multiplicative_expr term num_term id_term var brack_expr
 %type<int> number arr
 %type<std::vector<std::string>> ids
-%type<std::vector<temporary>> vars
-%type<dec_type> declaration
+%type<std::vector<temporary>> vars expressions nonempty_expressions
+%type<dec_type> declaration declarations
 	/* end of token specifications */
 
 %%
@@ -155,19 +157,24 @@ functions:    /*epsilon*/
                 {no_error = false; yyerrok;}
          ;
 function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
-                {$$ = "func ";
+                {func_table.push_back($2);
+                 $$ = "func ";
                  $$ += $2 + "\n";
-                 $$ += $5;
-                 $$ += $8;
+                 $$ += $5.local_code;
+                 $$ += $5.param_code;
+                 numParams = 0; // reset number of params after compiling param code for this function
+                 $$ += $8.local_code;
                  $$ += $11;
                  $$ += "endfunc\n";
                 }
         ;
 declarations: /* eps */
-                {$$ = "";}
+                {$$.local_code = $$.param_code  = "";}
             | declaration SEMICOLON declarations
-                {$$ = $1.code;
-                 $$ += $3;
+                {$$.local_code = $1.local_code;
+                 $$.param_code = $1.param_code;
+                 $$.local_code += $3.local_code;
+                 $$.param_code += $3.param_code;
                 }
             | declaration error declarations
                 {no_error = false; yyerrok;}
@@ -177,27 +184,30 @@ declarations: /* eps */
                 {no_error = false; yyerrok;}
             ;
 declaration:  ids INT
-                {$$.code = "";
+                {$$.local_code = "";
+                 $$.param_code = "";
                  // iterate through id list
                  for (int i = 0; i < $1.size(); i++) {
-                    $$.code += ". " + $1.at(i) + "\n";
+                    $$.local_code += ". " + $1.at(i) + "\n";
+                    $$.param_code += "= " + $1.at(i) + ", $" + std::to_string(numParams) + "\n"; // FIXME: multiple declarations in params is wrong
+                    numParams++;
                     symbol_table[$1.at(i)] = INT;
                  }
                  $$.type = dec_type::SCALAR;
                 }
               | ids ARRAY arr OF INT
-                {$$.code = "";
+                {$$.local_code = "";
                  for (int i = 0; i < $1.size(); i++) {
-                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3) + "\n";
+                    $$.local_code += ".[] " + $1.at(i) + ", " + std::to_string($3) + "\n";
                     symbol_table[$1.at(i)] = ARRAY;
                  }
                  $$.type = dec_type::ARR;
                 }
               | ids ARRAY arr arr OF INT
                 {$$.type = dec_type::ARRARR;
-                 $$.code = "";
+                 $$.local_code = "";
                  for(int i = 0; i < $1.size(); i++) {
-                    $$.code += ".[] " + $1.at(i) + ", " + std::to_string($3 * $4) + "\n";
+                    $$.local_code += ".[] " + $1.at(i) + ", " + std::to_string($3 * $4) + "\n";
                     symbol_table[$1.at(i)] = MATRIX;
                     array_table[$1.at(i)] = ($3); // pass id and row size to array table
                  }
@@ -319,20 +329,23 @@ comp: EQ
     ;
 
 expressions:         /* eps */
-                        {$$ = "";}
+                        {}
            |         nonempty_expressions
                         {$$ = $1;}
            ;
 
 nonempty_expressions: expression
-                        {$$ = $1.temp;}
+                        {$$.push_back($1);}
                     | expression COMMA nonempty_expressions
-                        {}
+                        {$$.push_back($1);
+                         for(int i = 0; i < $3.size(); i++) {
+                            $$.push_back($3.at(i));
+                         }
+                        }
                     ;
 
 expression:          multiplicative_expr
-                       {$$ = $1;
-                       }
+                       {$$ = $1;}
           |          multiplicative_expr PLUS expression
                        {$$.temp = new_temp();
 
@@ -376,7 +389,7 @@ multiplicative_expr: term
 term:       num_term
                 {$$ = $1;}
     |       id_term
-                {}
+                {$$ = $1;}
     ;
 num_term:     var
                 {$$ = $1;}
@@ -407,7 +420,13 @@ num_term:     var
                 }
         ;
 id_term:      ident LPAREN expressions RPAREN
-                { // TODO: this is a function call
+                {$$.temp = new_temp();// function call
+                 $$.eval = ". " + $$.temp + "\n";
+                 for (int i = 0; i < $3.size(); i++) {
+                    $$.eval += $3.at(i).eval; // first evaluate expressions
+                    $$.eval += "param " + $3.at(i).temp + "\n"; // add all evaluated expressions to queue of params
+                 }
+                 $$.eval += "call " + $1 + ", " + $$.temp + "\n"; // call the function and store it in temp
                 }
        ;
 
@@ -445,7 +464,7 @@ var:       ident
                 $$.array_name = $1;
                 $$.idx = std::to_string(row_major($1, n, m));
 
-                $$.eval = $2.eval + $3.eval; // first evaluate bracket expressions
+                $$.eval = $2.eval + $3.eval; // first evaluate bracket expression
 
                 $$.eval += ". " + $$.temp + "\n";
                 $$.eval += "=[] " + $$.temp + ", " + $1 + ", " + $$.idx + "\n";

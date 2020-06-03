@@ -1,7 +1,35 @@
-func main
+func myF2
+. d
+. e
+= d, $0
+= e, $1
+. __temp__1
+- __temp__1, d, e
+ret __temp__1
+endfunc
+func myFunc
+. b
 . c
+= b, $0
+= c, $1
+. __temp__2
++ __temp__2, b, c
+ret __temp__2
+endfunc
+func main
 . a
-= a, 1
+= a, 2
+. __temp__3
+param a
+param 1
+call myFunc, __temp__3
+= a, __temp__3
+.> a
+. __temp__4
+param a
+param 1
+call myF2, __temp__4
+= a, __temp__4
 .> a
 endfunc
 

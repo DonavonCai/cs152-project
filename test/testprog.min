@@ -1,3 +1,25 @@
+function myF2;
+beginparams
+d : integer;
+e : integer;
+endparams
+beginlocals
+endlocals
+beginbody
+return d - e;
+endbody
+
+function myFunc;
+beginparams
+b : integer;
+c: integer;
+endparams
+beginlocals
+endlocals
+beginbody
+return b + c;
+endbody
+
 function main;
 beginparams
 endparams
@@ -5,6 +27,9 @@ beginlocals
 a : integer;
 endlocals
 beginbody
-a := 1;
+a := 2;
+a := myFunc(a, 1);
+write a;
+a := myF2(a, 1);
 write a;
 endbody
