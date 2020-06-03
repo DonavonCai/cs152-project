@@ -62,6 +62,11 @@ std::map<std::string, int> symbol_table;
    used for calculating indices when array is accessed */
 std::map<std::string, int> array_table;
 
+/* table of function names */
+std::map<std::string, std::string> func_table;
+
+
+
 /* take in coords [n][m] for matrix, return the corresponding row-major order index for existing matrix a
    idx is the nth entry in the mth row  */
 int row_major(std::string a, int n, int m) {
@@ -138,28 +143,21 @@ start_program: program
              ;
 
 program:      functions 
-                {$$ = $1;
-                }
+                {$$ = $1;}
          ;
 functions:    /*epsilon*/
                 {$$ = "";} 
          |    function functions
-                {$$ = $1 + " " + $2;
-                 $$ = $1 + " " + $2;
-                 if($2 != "")
-                    $$ += "\n";
+                {$$ = $1;
+                 $$ += $2;
                 }
          |    error functions
                 {no_error = false; yyerrok;}
          ;
 function:     FUNCTION ident SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY
-                { $$ = "func ";
-                 $$ += $2;
-                 if ($5 != "")
-                    $$ += "\n";
+                {$$ = "func ";
+                 $$ += $2 + "\n";
                  $$ += $5;
-                 if ($8 != "\n")
-                    $$ += "\n";
                  $$ += $8;
                  $$ += $11;
                  $$ += "endfunc\n";
@@ -409,7 +407,7 @@ num_term:     var
                 }
         ;
 id_term:      ident LPAREN expressions RPAREN
-                {
+                { // TODO: this is a function call
                 }
        ;
 

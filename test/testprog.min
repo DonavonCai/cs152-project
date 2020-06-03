@@ -6,5 +6,5 @@ a : integer;
 endlocals
 beginbody
 a := 1;
+write a;
 endbody
-## parser should find error on line 8, should be := instead of =

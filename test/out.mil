@@ -1,5 +1,7 @@
 func main
+. c
 . a
 = a, 1
+.> a
 endfunc
- 
+
