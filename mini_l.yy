@@ -264,11 +264,9 @@ statement:  var ASSIGN expression
                 }
         |   IF bool_expr THEN statements ENDIF
                 {$$ = "";
-                 std::string begin = new_label();
                  std::string end = new_label();
 
                  $$ += $2.declare;
-                 $$ += ": " + begin + "\n";
                  $$ += $2.eval;
                  $$ += "! " + $2.temp + ", " + $2.temp + "\n"; // logical not to make sure that goto end if predicate is NOT true
                  $$ += "?:= " + end + ", " + $2.temp  + "\n";// if bool_expr == 0 GOTO end
@@ -277,15 +275,18 @@ statement:  var ASSIGN expression
                 }
         |   IF bool_expr THEN statements ELSE statements ENDIF
                 {$$ = "";
-                 // bool_expr temp declare
-                 // begin
-                 // bool_expr eval
-                 // if bool_expr == 0 goto else
-                 // statements1.code
-                 // goto end
-                 // else
-                 // statements2.code
-                 // end
+                 std::string l_else = new_label();
+                 std::string l_end = new_label();
+
+                 $$ += $2.declare;
+                 $$ += $2.eval;
+                 $$ += "! " + $2.temp + ", " + $2.temp + "\n"; // logical not to make sure that goto end if predicate is NOT true
+                 $$ += "?:= " + l_else + ", " + $2.temp  + "\n";// if bool_expr == 0 GOTO else
+                 $$ += $4; // then code
+                 $$ += ":= " + l_end + "\n"; // if then branch has executed, goto end
+                 $$ += ": " + l_else + "\n"; // else
+                 $$ += $6; // else code
+                 $$ += ": " + l_end + "\n";
                 }
         |   WHILE bool_expr BEGINLOOP statements ENDLOOP
                 {$$ = "";

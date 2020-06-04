@@ -11,9 +11,14 @@ function main;
 beginparams
 endparams
 beginlocals
-a : integer;
+a, b : integer;
 endlocals
 beginbody
 a := x();
-write a;
+b := 5;
+if a == 2 then
+    write a;
+else
+    write b;
+endif;
 endbody

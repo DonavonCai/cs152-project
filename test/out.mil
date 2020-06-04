@@ -3,9 +3,19 @@ ret 1
 endfunc
 func main
 . a
+. b
 . __temp__1
 call x, __temp__1
 = a, __temp__1
+= b, 5
+. __temp__2
+== __temp__2, a, 2
+! __temp__2, __temp__2
+?:= __label__1, __temp__2
 .> a
+:= __label__2
+: __label__1
+.> b
+: __label__2
 endfunc
 
