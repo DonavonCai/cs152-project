@@ -327,13 +327,39 @@ statement:  var ASSIGN expression
                      begin = new_label();
                  }
                  $$ += $6.declare;
-                 $$ += ": " + begin + "\n";
+                 $$ += ": " + begin + "\n"; // loop
                  $$ += $3; // statements code
-                 $$ += $6.eval;
+                 $$ += $6.eval; // check condition
                  $$ += "?:= " + begin + ", " + $6.temp + "\n";// if bool_expr == 1 goto begin
                 }
         |   FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP
-                {$$ = "";}
+                {$$ = "";
+                 std::string begin;
+                 std::string end = new_label();
+                 if(contReq == 1) {
+                    begin = begin_buffer;
+                 }
+                 else {
+                    begin = new_label();
+                 }
+                 $$ += $2.declare; // before loop
+                 $$ += $6.declare; // boolean expression
+                 $$ += $8.declare; // after loop
+                 $$ += $10.declare; // expression for after loop
+
+                 $$ += $2.eval; // initialize
+                 
+                 $$ += ": " + begin + "\n"; // loop
+                   $$ += $6.eval;
+                   $$ += "! " + $6.temp + ", " + $6.temp + "\n";
+                   $$ += "?:= " + end + ", " + $6.temp + "\n"; // if condition false, end
+                   $$ += $12;
+
+                   $$ += $10.eval;
+                   $$ += "= " + $8.temp + ", " + $10.temp + "\n"; // update after each iteration
+                   $$ += ":= " + begin + "\n";
+                 $$ += ": " + end + "\n";
+                }
         |   READ vars
                 {$$ = "";
                  for (int i = 0; i < $2.size(); i++) {
