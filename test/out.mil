@@ -1,21 +1,26 @@
-func x
-ret 1
-endfunc
 func main
 . a
 . b
+= a, 1
+= b, 2
 . __temp__1
-call x, __temp__1
-= a, __temp__1
-= b, 5
 . __temp__2
-== __temp__2, a, 2
-! __temp__2, __temp__2
-?:= __label__1, __temp__2
-.> a
-:= __label__2
+. __temp__3
 : __label__1
-.> b
+< __temp__1, a, 5
+< __temp__2, b, 5
+&& __temp__3, __temp__1, __temp__2
+! __temp__3, __temp__3
+?:= __label__2, __temp__3
+. __temp__4
++ __temp__4, a, 1
+= a, __temp__4
+. __temp__5
++ __temp__5, b, 1
+= b, __temp__5
+:= __label__1
 : __label__2
+.> a
+.> b
 endfunc
 

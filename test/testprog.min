@@ -1,12 +1,3 @@
-function x;
-beginparams
-endparams
-beginlocals
-endlocals
-beginbody
-    return 1;
-endbody
-
 function main;
 beginparams
 endparams
@@ -14,11 +5,13 @@ beginlocals
 a, b : integer;
 endlocals
 beginbody
-a := x();
-b := 5;
-if a == 2 then
-    write a;
-else
-    write b;
-endif;
+a := 1;
+b := 2;
+while a < 5 and b < 5
+beginloop
+    a := a + 1;
+    b := b + 1;
+endloop;
+write a;
+write b;
 endbody

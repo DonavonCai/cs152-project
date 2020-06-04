@@ -290,13 +290,16 @@ statement:  var ASSIGN expression
                 }
         |   WHILE bool_expr BEGINLOOP statements ENDLOOP
                 {$$ = "";
-                 // bool_expr temp declare
-                 // begin
-                 // bool_expr eval
-                 // if bool_expr == 0 goto end
-                 // statements.code
-                 // goto begin
-                 // end
+                 std::string begin = new_label();
+                 std::string end = new_label();
+                 $$ += $2.declare;
+                 $$ += ": " + begin + "\n";
+                 $$ += $2.eval;
+                 $$ += "! " + $2.temp + ", " + $2.temp + "\n";
+                 $$ += "?:= " + end + ", " + $2.temp + "\n";// if bool_expr == 0 goto end
+                 $$ += $4; // statements code
+                 $$ += ":= " + begin + "\n"; // condition is true, so goto begin
+                 $$ += ": " + end + "\n"; // end
                 }
         |   DO BEGINLOOP statements ENDLOOP WHILE bool_expr
                 {$$ = "";
