@@ -88,7 +88,7 @@ loc.step();
 {DIGIT}+                  {return yy::parser::make_NUMBER(atoi(yytext), loc);}
 {ID}                      {return yy::parser::make_IDENT(yytext, loc);}
    
-"\n"    {}
+"\n"    {loc.lines(yyleng); loc.step();}
     
 [ \t]   { }
 
