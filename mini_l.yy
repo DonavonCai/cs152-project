@@ -239,10 +239,10 @@ ids:        ident COLON
                  }
                 }
    ;
-statements: statement SEMICOLON
+statements: statement
                 {$$ = $1;}
-          |  statement SEMICOLON statements
-                {$$ = $1 + $3;}
+          |  statement  statements
+                {$$ = $1 + $2;}
           |  statement error statements
                 {no_error = false; yyerrok;}
           |  statement error
@@ -256,7 +256,7 @@ statements: statement SEMICOLON
           |  error '\n'
                 {no_error = false; yyerrok;}
           ;
-statement:  var ASSIGN expression
+statement:  var ASSIGN expression SEMICOLON
                 {$$ = "";
                  if ($1.type == temporary::INT) { // the declaration and eval for an array creates a new temp. Not what we want if the array is the lhs of the operation.
                     $$ += $1.declare; // only need to declare, nothing to evaluate
@@ -360,7 +360,7 @@ statement:  var ASSIGN expression
                    $$ += ":= " + begin + "\n";
                  $$ += ": " + end + "\n";
                 }
-        |   READ vars
+        |   READ vars SEMICOLON
                 {$$ = "";
                  for (int i = 0; i < $2.size(); i++) {
                     $$ += $2.at(i).declare;
@@ -368,7 +368,7 @@ statement:  var ASSIGN expression
                     $$ += ".< " + $2.at(i).temp + "\n"; // use var
                  }
                 }
-        |   WRITE vars
+        |   WRITE vars SEMICOLON
                 {$$ = "";
                  for (int i = 0; i < $2.size(); i++) {
                     $$ += $2.at(i).declare;
@@ -376,12 +376,12 @@ statement:  var ASSIGN expression
                     $$ += ".> " + $2.at(i).temp + "\n";
                  }
                 }
-        |   CONTINUE
+        |   CONTINUE SEMICOLON
                 {std::string begin = new_label(); // create label now // TODO: try recording the line here
                  request_continue(begin); // request will be caught in loop
                  $$ = ":= " + begin + "\n";
                 }
-        |   RETURN expression
+        |   RETURN expression SEMICOLON
                 {$$ = $2.declare;
                  $$ += $2.eval;
                  $$ += "ret " + $2.temp + "\n";

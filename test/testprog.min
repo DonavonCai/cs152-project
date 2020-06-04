@@ -2,14 +2,11 @@ function main;
 beginparams
 endparams
 beginlocals
-a, b : integer;
+a : integer;
 endlocals
 beginbody
 a := 1;
-##for a := 1; a < 5; a := a + 1
-while a < 5
-beginloop
-    write a;
-    a := a + 1;
-endloop;
+for a := 1; a < 5; a := a + 1 beginloop
+write a;
+endloop
 endbody

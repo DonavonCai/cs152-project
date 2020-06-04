@@ -1,17 +1,16 @@
 func main
 . a
-. b
 = a, 1
 . __temp__1
-: __label__1
+. __temp__2
+: __label__2
 < __temp__1, a, 5
 ! __temp__1, __temp__1
-?:= __label__2, __temp__1
+?:= __label__1, __temp__1
 .> a
-. __temp__2
 + __temp__2, a, 1
 = a, __temp__2
-:= __label__1
-: __label__2
+:= __label__2
+: __label__1
 endfunc
 
