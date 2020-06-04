@@ -6,12 +6,13 @@ a, b : integer;
 endlocals
 beginbody
 a := 1;
-b := 2;
-while a < 5 and b < 5
-beginloop
+do
+    beginloop
     a := a + 1;
-    b := b + 1;
-endloop;
-write a;
-write b;
+    if a == 4 then
+        continue;
+    endif;
+    write a;
+    endloop
+while a < 5;
 endbody

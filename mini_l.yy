@@ -97,6 +97,15 @@ std::string new_label() {
 
     return label;
 }
+
+bool contReq = 0;
+std::string begin_buffer = "";
+
+void request_continue(std::string label) {
+    contReq = 1;
+    begin_buffer = label;
+}
+
 	/* end of your code */
 }
 
@@ -290,8 +299,15 @@ statement:  var ASSIGN expression
                 }
         |   WHILE bool_expr BEGINLOOP statements ENDLOOP
                 {$$ = "";
-                 std::string begin = new_label();
+                 std::string begin;
+                 if (contReq == 1) {
+                    begin = begin_buffer;
+                 }
+                 else {
+                    begin = new_label();
+                 }
                  std::string end = new_label();
+
                  $$ += $2.declare;
                  $$ += ": " + begin + "\n";
                  $$ += $2.eval;
@@ -303,12 +319,18 @@ statement:  var ASSIGN expression
                 }
         |   DO BEGINLOOP statements ENDLOOP WHILE bool_expr
                 {$$ = "";
-                 // bool_expr temp declare
-                 // begin
-                 // statements.code
-                 // bool_expr.eval
-                 // if bool_expr == 1 goto begin
-                 // end
+                 std::string begin;
+                 if(contReq == 1) { // there is a continue, so we use the preemptively 
+                     begin = begin_buffer;
+                 }
+                 else {
+                     begin = new_label();
+                 }
+                 $$ += $6.declare;
+                 $$ += ": " + begin + "\n";
+                 $$ += $3; // statements code
+                 $$ += $6.eval;
+                 $$ += "?:= " + begin + ", " + $6.temp + "\n";// if bool_expr == 1 goto begin
                 }
         |   FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP
                 {$$ = "";}
@@ -329,7 +351,10 @@ statement:  var ASSIGN expression
                  }
                 }
         |   CONTINUE
-                {$$ = "";}
+                {std::string begin = new_label(); // create label now // TODO: try recording the line here
+                 request_continue(begin); // request will be caught in loop
+                 $$ = ":= " + begin + "\n";
+                }
         |   RETURN expression
                 {$$ = $2.declare;
                  $$ += $2.eval;
