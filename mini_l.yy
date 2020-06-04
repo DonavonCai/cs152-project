@@ -27,6 +27,7 @@ struct dec_type {
 
 struct temporary {
     std::string temp;
+    std::string declare;
     std::string eval;
     enum types{INT, ARRAY, MATRIX} type;
     std::string array_name;
@@ -66,9 +67,6 @@ std::map<std::string, int> array_table;
 /* table of function names*/
 std::vector<std::string> func_table;
 
-/* list of labels */
-std::vector<std::string> labels;
-
 /* take in coords [n][m] for matrix, return the corresponding row-major order index for existing matrix a
    idx is the nth entry in the mth row  */
 int row_major(std::string a, int n, int m) {
@@ -83,15 +81,21 @@ int row_major(std::string a, int n, int m) {
     return idx;
 }
 
-int numParams = 0;
+int numParams = 0; // number of parameters in the current function
 int numTemps = 0;
 std::string new_temp() {
     numTemps++;
-    std::string temp = "__temp__";
-    temp += std::to_string(numTemps);
-    symbol_table[temp] = 0;
+    std::string temp = "__temp__" + std::to_string(numTemps);
 
     return temp;
+}
+
+int numLabels = 0;
+std::string new_label() {
+    numLabels++;
+    std::string label = "__label__" + std::to_string(numLabels);
+
+    return label;
 }
 	/* end of your code */
 }
@@ -119,9 +123,10 @@ std::string new_temp() {
 %start start_program
 
 %type<std::string> program functions function
-%type<std::string> ident statements statement
+%type<std::string> ident statements statement comp
 
 %type<temporary> expression multiplicative_expr term num_term id_term var brack_expr
+%type<temporary> bool_expr relation_expr relation_and_expr
 %type<int> number arr
 %type<std::vector<std::string>> ids
 %type<std::vector<temporary>> vars expressions nonempty_expressions
@@ -189,7 +194,7 @@ declaration:  ids INT
                  // iterate through id list
                  for (int i = 0; i < $1.size(); i++) {
                     $$.local_code += ". " + $1.at(i) + "\n";
-                    $$.param_code += "= " + $1.at(i) + ", $" + std::to_string(numParams) + "\n"; // FIXME: multiple declarations in params is wrong
+                    $$.param_code += "= " + $1.at(i) + ", $" + std::to_string(numParams) + "\n";
                     numParams++;
                     symbol_table[$1.at(i)] = INT;
                  }
@@ -244,30 +249,69 @@ statements: statement SEMICOLON
           ;
 statement:  var ASSIGN expression
                 {$$ = "";
-                 if ($1.type == temporary::INT)
-                    $$ += $1.eval; // first evaluate var
-
-                 $$ += $3.eval; // and expression
-                 if($1.type == temporary::INT) { // note: if expression is an array access (dst = src[i]), then expression evaluates to a temp. All array accessing in this case is done in eval.
-                    $$ += "= " + $1.temp + ", " + $3.temp + "\n"; // if var is an int, then var.temp is the id of the var
+                 if ($1.type == temporary::INT) { // the declaration and eval for an array creates a new temp. Not what we want if the array is the lhs of the operation.
+                    $$ += $1.declare; // only need to declare, nothing to evaluate
                  }
-                 else if ($1.type != temporary::INT){ // dst[i] = something. Again, if expression is an array access, a temp will be used.
+
+                 $$ += $3.declare;
+                 $$ += $3.eval;
+                 if($1.type == temporary::INT) { // note: int = expression. $3.temp can be either an int or an array access temp
+                    $$ += "= " + $1.temp + ", " + $3.temp + "\n";
+                 }
+                 else if ($1.type != temporary::INT){ // dst[i] = expression. Again, if expression is an array access, a temp will be used.
                     $$ += "[]= " + $1.array_name + ", " + $1.idx + ", " + $3.temp + "\n";
                  }
                 }
         |   IF bool_expr THEN statements ENDIF
-                {$$ = "";}
+                {$$ = "";
+                 std::string begin = new_label();
+                 std::string end = new_label();
+
+                 $$ += $2.declare;
+                 $$ += ": " + begin + "\n";
+                 $$ += $2.eval;
+                 $$ += "! " + $2.temp + ", " + $2.temp + "\n"; // logical not to make sure that goto end if predicate is NOT true
+                 $$ += "?:= " + end + ", " + $2.temp  + "\n";// if bool_expr == 0 GOTO end
+                 $$ += $4;
+                 $$ += ": " + end + "\n";
+                }
         |   IF bool_expr THEN statements ELSE statements ENDIF
-                {$$ = "";}
+                {$$ = "";
+                 // bool_expr temp declare
+                 // begin
+                 // bool_expr eval
+                 // if bool_expr == 0 goto else
+                 // statements1.code
+                 // goto end
+                 // else
+                 // statements2.code
+                 // end
+                }
         |   WHILE bool_expr BEGINLOOP statements ENDLOOP
-                {$$ = "";}
+                {$$ = "";
+                 // bool_expr temp declare
+                 // begin
+                 // bool_expr eval
+                 // if bool_expr == 0 goto end
+                 // statements.code
+                 // goto begin
+                 // end
+                }
         |   DO BEGINLOOP statements ENDLOOP WHILE bool_expr
-                {$$ = "";}
+                {$$ = "";
+                 // bool_expr temp declare
+                 // begin
+                 // statements.code
+                 // bool_expr.eval
+                 // if bool_expr == 1 goto begin
+                 // end
+                }
         |   FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP
                 {$$ = "";}
         |   READ vars
                 {$$ = "";
                  for (int i = 0; i < $2.size(); i++) {
+                    $$ += $2.at(i).declare;
                     $$ += $2.at(i).eval; // evaluate var
                     $$ += ".< " + $2.at(i).temp + "\n"; // use var
                  }
@@ -275,57 +319,102 @@ statement:  var ASSIGN expression
         |   WRITE vars
                 {$$ = "";
                  for (int i = 0; i < $2.size(); i++) {
-                    $$ += $2.at(i).eval;// evaluate var
-                    $$ += ".> " + $2.at(i).temp + "\n"; // use var
+                    $$ += $2.at(i).declare;
+                    $$ += $2.at(i).eval;
+                    $$ += ".> " + $2.at(i).temp + "\n";
                  }
                 }
         |   CONTINUE
                 {$$ = "";}
         |   RETURN expression
-                {$$ = $2.eval;
+                {$$ = $2.declare;
+                 $$ += $2.eval;
                  $$ += "ret " + $2.temp + "\n";
                 }
         ;
 bool_expr:  relation_and_expr
-                { }
+                {$$ = $1;}
          |  relation_and_expr OR bool_expr
-                { }
+                {$$.temp = new_temp();
+                 $$.declare = $1.declare + $3.declare;
+                 $$.declare += ". " + $$.temp + "\n";
+
+                 $$.eval = $1.eval + $3.eval;
+                 $$.eval += "|| " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n";
+                }
          ;
 relation_and_expr:  relation_expr
-                        {}
+                        {$$ = $1;}
                  |  relation_expr AND relation_and_expr
-                        {}
+                        {$$.temp = new_temp();
+                         $$.declare = $1.declare + $3.declare;
+                         $$.declare += ". " + $$.temp + "\n";
+
+                         $$.eval = $1.eval + $3.eval;
+                         $$.eval += "&& " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n";
+                        }
                  ;
 relation_expr:       expression comp expression
-                        {}
+                        {$$.temp = new_temp();
+                         $$.declare = $1.declare + $3.declare;
+                         $$.declare += ". " + $$.temp + "\n";
+
+                         $$.eval = $1.eval + $3.eval;
+                         $$.eval += $2 + " " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n"; 
+                        }
              |       NOT expression comp expression
-                        {}
+                        {$$.temp = new_temp();
+                         $$.declare = $2.declare + $4.declare;
+                         $$.declare += ". " + $$.temp + "\n";
+
+                         $$.eval = $2.eval + $4.eval;
+                         $$.eval += $3 + " " + $$.temp + ", " + $2.temp + ", " + $4.temp + "\n"; 
+                         $$.eval += "! " + $$.temp + ", " + $$.temp + "\n";
+                        }
              |       TRUE
-                        {}
+                        {$$.temp = new_temp();;
+                         $$.declare = ". " + $$.temp + "\n";
+                         $$.eval = "= " + $$.temp + ", 1\n" ;
+                        }
              |       NOT TRUE
-                        {}            
+                        {$$.temp = new_temp();
+                         $$.declare = ". " + $$.temp + "\n";
+                         $$.eval = "= " + $$.temp + ", 0\n";
+                        }            
              |       FALSE
-                        {}
+                        {$$.temp = new_temp();
+                         $$.declare = ". " + $$.temp + "\n";
+                         $$.eval = "= " + $$.temp + ", 0\n";
+                        }
              |       NOT FALSE
-                        {}
+                        {$$.temp = new_temp();
+                         $$.declare = ". " + $$.temp + "\n";
+                         $$.eval = "= " + $$.temp + ", 1\n";
+                        }
              |       LPAREN bool_expr RPAREN
-                        {}
+                        {$$ = $2;}
              |       NOT LPAREN bool_expr RPAREN
-                        {}
+                        {$$.temp = new_temp();
+                         $$.declare = $3.declare;
+                         $$.eval = $3.eval;
+
+                         $$.declare += ". " + $$.temp + "\n";
+                         $$.eval += "! " + $$.temp + ", " + $3.temp + "\n";
+                        }
              ;
 
 comp: EQ
-        {} 
+        {$$ = "==";} 
     | NEQ
-        {} 
+        {$$ = "!=";} 
     | LT
-        {} 
+        {$$ = "<";} 
     | GT
-        {} 
+        {$$ = ">";} 
     | LE
-        {} 
+        {$$ = "<=";} 
     | GE
-        {}
+        {$$ = ">=";}
     ;
 
 expressions:         /* eps */
@@ -348,41 +437,45 @@ expression:          multiplicative_expr
                        {$$ = $1;}
           |          multiplicative_expr PLUS expression
                        {$$.temp = new_temp();
+                        $$.declare = $1.declare + $3.declare;
+                        $$.declare += ". " + $$.temp + "\n"; // declare new temp
 
-                        $$.eval = $1.eval; // evaluate multiplicative_expr
-                        $$.eval += $3.eval; // evaluate expression
-
-                        $$.eval += ". " + $$.temp + "\n"; // declare new temp
+                        $$.eval = $1.eval + $3.eval;
                         $$.eval += "+ " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n";
                        }
           |          multiplicative_expr MINUS expression
                        {$$.temp = new_temp();
-                        $$.eval = $1.eval;
-                        $$.eval += $3.eval;
-                        $$.eval += ". " + $$.temp + "\n"; // symbol table is updated in new_temp();
+                        $$.declare = $1.declare + $3.declare;
+                        $$.declare += ". " + $$.temp + "\n";
+
+                        $$.eval = $1.eval + $3.eval;
                         $$.eval += "- " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n";
                        }
           ;
 multiplicative_expr: term
-                       {$$.temp = $1.temp;
-                        $$.eval = $1.eval;
-                       }
+                       {$$ = $1;}
                    | term MULT multiplicative_expr
                        {$$.temp = new_temp();
-                        $$.eval = $3.eval; // evaluate multiplicative_expr
-                        $$.eval += ". " + $$.temp + "\n"; // declare new temp
+                        $$.declare = $1.declare + $3.declare; // evaluate terms and expression
+                        $$.declare += ". " + $$.temp + "\n"; // declare new temp
+
+                        $$.eval = $1.eval + $3.eval; // evaluate term and multiplicative_expr
                         $$.eval += "* " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n";
                        }
                    | term DIV multiplicative_expr
                        {$$.temp = new_temp();
-                        $$.eval = $3.eval; // evaluate multiplicative_expr
-                        $$.eval += ". " + $$.temp + "\n"; // declare new temp
+                        $$.declare = $1.declare + $3.declare;
+                        $$.declare += ". " + $$.temp + "\n"; // declare new temp
+
+                        $$.eval = $1.eval + $3.eval; // evaluate multiplicative_expr 
                         $$.eval += "/ " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n";
                        }
                    | term MOD multiplicative_expr
                        {$$.temp = new_temp();
+                        $$.declare = $1.declare + $3.declare;
+                        $$.declare += ". " + $$.temp + "\n"; // declare new temp
+
                         $$.eval = $3.eval; // evaluate multiplicative_expr
-                        $$.eval += ". " + $$.temp + "\n"; // declare new temp
                         $$.eval += "% " + $$.temp + ", " + $1.temp + ", " + $3.temp + "\n";
                        }
                    ;
@@ -396,36 +489,43 @@ num_term:     var
         |     MINUS var %prec UMINUS
                 {$$.temp = new_temp();
                  $$.type = $2.type;
-                 $$.eval = $2.eval; // evaluate var
-                 $$.eval += ". " + $$.temp + "\n"; // declare new temp
+                 $$.declare = $2.declare; // declare var temps
+                 $$.declare += ". " + $$.temp + "\n"; // declare new temp
+
+                 $$.eval = $2.eval; // evaluate var 
                  $$.eval += "- " + $$.temp + ", 0, " + $2.temp + "\n"; // create instruction
                 }
         |     number
                 {$$.temp = std::to_string($1);
-                 $$.eval = "";
+                 $$.eval = $$.declare = "";
                 }
         |     MINUS number %prec UMINUS
                 {$$.temp = new_temp();
-                 $$.eval = ". " + $$.temp + "\n";
-                 $$.eval += "- " + $$.temp + ", 0, " + std::to_string($2) + "\n";
+                 $$.declare = ". " + $$.temp + "\n";
+                 $$.eval = "- " + $$.temp + ", 0, " + std::to_string($2) + "\n";
                 }
         |     LPAREN expression RPAREN
                 {$$ = $2;}
         |     MINUS LPAREN expression RPAREN %prec UMINUS
                 {$$.temp = new_temp();
                  $$.type = $3.type;
-                 $$.eval = $3.eval; // first evaluate the expression
-                 $$.eval += ". " + $$.temp + "\n"; // then declare a new temp
+                 $$.declare = $3.declare; // first declare temps for expression
+                 $$.declare += ". " + $$.temp + "\n"; // then declare a new temp
+
+                 $$.eval = $3.eval; // evaluate the expression
                  $$.eval += "- " + $$.temp + ", 0, " + $3.temp + "\n"; // then do 0 - expression and store it in the new temp
                 }
         ;
 id_term:      ident LPAREN expressions RPAREN
                 {$$.temp = new_temp();// function call
-                 $$.eval = ". " + $$.temp + "\n";
+                 $$.declare = "";
+                 $$.eval = "";
                  for (int i = 0; i < $3.size(); i++) {
+                    $$.declare += $3.at(i).declare;
                     $$.eval += $3.at(i).eval; // first evaluate expressions
                     $$.eval += "param " + $3.at(i).temp + "\n"; // add all evaluated expressions to queue of params
                  }
+                 $$.declare += ". " + $$.temp + "\n";
                  $$.eval += "call " + $1 + ", " + $$.temp + "\n"; // call the function and store it in temp
                 }
        ;
@@ -442,7 +542,7 @@ vars:       var
 var:       ident
                {$$.type = temporary::INT;
                 $$.temp = $1;
-                $$.eval = "";
+                $$.eval = $$.declare = "";
                }
    |       ident brack_expr
                {$$.type = temporary::ARRAY;
@@ -450,9 +550,10 @@ var:       ident
                 $$.array_name = $1;
                 $$.idx = $2.temp;
 
-                $$.eval = $2.eval; // evaluation of an array access is to create a new temporary
-                
-                $$.eval += ". " + $$.temp + "\n";
+                $$.declare = $2.declare; // declare necessary temps for bracket expression
+                $$.declare += ". " + $$.temp + "\n"; // also declare a new temp
+
+                $$.eval = $2.eval; // evaluatte bracket expression
                 $$.eval += "=[] " + $$.temp + ", " + $1 + ", " + $$.idx + "\n";
                }
    |       ident brack_expr brack_expr
@@ -464,10 +565,11 @@ var:       ident
                 $$.array_name = $1;
                 $$.idx = std::to_string(row_major($1, n, m));
 
-                $$.eval = $2.eval + $3.eval; // first evaluate bracket expression
+                $$.declare = $2.declare + $3.declare; // declare necessary temps for bracket expressions
+                $$.declare += ". " + $$.temp + "\n"; // declare temp
 
-                $$.eval += ". " + $$.temp + "\n";
-                $$.eval += "=[] " + $$.temp + ", " + $1 + ", " + $$.idx + "\n";
+                $$.eval = $2.eval + $3.eval; // evaluate bracket expression
+                $$.eval += "=[] " + $$.temp + ", " + $1 + ", " + $$.idx + "\n"; // store in temp
                }
    ;
 brack_expr: LBRACKET expression RBRACKET

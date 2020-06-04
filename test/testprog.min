@@ -1,23 +1,10 @@
-function myF2;
+function x;
 beginparams
-d : integer;
-e : integer;
 endparams
 beginlocals
 endlocals
 beginbody
-return d - e;
-endbody
-
-function myFunc;
-beginparams
-b : integer;
-c: integer;
-endparams
-beginlocals
-endlocals
-beginbody
-return b + c;
+    return 1;
 endbody
 
 function main;
@@ -27,9 +14,6 @@ beginlocals
 a : integer;
 endlocals
 beginbody
-a := 2;
-a := myFunc(a, 1);
-write a;
-a := myF2(a, 1);
+a := x();
 write a;
 endbody
